@@ -5,6 +5,7 @@ import mysql.connector
 from mysql.connector import Error
 import os
 from dotenv import load_dotenv
+from utils.password_utils import verify_password
 
 # Load environment variables
 load_dotenv()
@@ -40,13 +41,27 @@ class LoginDB:
         
         try:
             query = """
-                SELECT id, username, full_name, role, email, status 
+                SELECT id, username, password, full_name, role, email, status 
                 FROM users 
-                WHERE username = %s AND password = %s AND status = 'active'
+                WHERE username = %s AND status = 'active'
             """
-            self.cursor.execute(query, (username, password))
-            result = self.cursor.fetchone()
-            return result
+            self.cursor.execute(query, (username,))
+            user = self.cursor.fetchone()
+            
+            if user:
+                # Verify the password hash
+                if verify_password(user['password'], password):
+                    # Return user info without the password
+                    return {
+                        'id': user['id'],
+                        'username': user['username'],
+                        'full_name': user['full_name'],
+                        'role': user['role'],
+                        'email': user['email'],
+                        'status': user['status']
+                    }
+            
+            return None
         except Error as e:
             print(f"Error authenticating user: {e}")
             return None

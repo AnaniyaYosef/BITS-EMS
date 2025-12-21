@@ -43,7 +43,7 @@ class LoginPage(ctk.CTkFrame):
         # Left Panel - Branding/Image
         self.left_panel = ctk.CTkFrame(
             self.two_panel_frame, 
-            fg_color="#2c3e50",
+            fg_color="#7DC243",
             corner_radius=0
         )
         self.left_panel.grid(row=0, column=0, sticky="nsew")
@@ -76,9 +76,9 @@ class LoginPage(ctk.CTkFrame):
         # Tagline
         tagline_label = ctk.CTkLabel(
             self.brand_frame,
-            text="Enterprise Management System",
+            text="Employee Management System",
             font=ctk.CTkFont(family="Segoe UI", size=16),
-            text_color="#bdc3c7"
+            text_color="#f3f3f3"
         )
         tagline_label.pack()
         
@@ -129,7 +129,7 @@ class LoginPage(ctk.CTkFrame):
             height=48,
             corner_radius=8,
             font=ctk.CTkFont(family="Segoe UI", size=14),
-            border_color="#3498db"
+            border_color="#2c3e50"
         )
         self.username_entry.pack(fill="x")
         
@@ -153,7 +153,7 @@ class LoginPage(ctk.CTkFrame):
             corner_radius=8,
             show="•",
             font=ctk.CTkFont(family="Segoe UI", size=14),
-            border_color="#3498db"
+            border_color="#2c3e50"
         )
         self.password_entry.pack(fill="x")
         
@@ -176,7 +176,7 @@ class LoginPage(ctk.CTkFrame):
             font=ctk.CTkFont(family="Segoe UI", size=12),
             fg_color="transparent",
             hover_color="#ecf0f1",
-            text_color="#3498db",
+            text_color="#2c3e50",
             command=self.forgot_password,
             width=0
         )
@@ -191,8 +191,8 @@ class LoginPage(ctk.CTkFrame):
             height=50,
             corner_radius=8,
             font=ctk.CTkFont(family="Segoe UI", size=16, weight="bold"),
-            fg_color="#3498db",
-            hover_color="#2980b9",
+            fg_color="#7DC243",
+            hover_color="#81C946",
             text_color="white",
             border_width=0
         )
