@@ -1,9 +1,6 @@
 import customtkinter as ctk
 from PIL import Image
 import os
-from svglib.svglib import svg2rlg
-from reportlab.graphics import renderPM
-import io
 
 
 class EmployeeDashboard(ctk.CTk):
@@ -11,7 +8,7 @@ class EmployeeDashboard(ctk.CTk):
         super().__init__()
 
         # 1. Window Setup
-        self.title("Employee Information Desk - SVG Version")
+        self.title("Employee Information Desk")
         self.geometry("1000x700")
 
         # Configure Grid Layout
@@ -27,56 +24,34 @@ class EmployeeDashboard(ctk.CTk):
         self.setup_sidebar()
         self.setup_main_content()
 
-    def load_svg(self, file_path, size=(20, 20)):
-        """Converts SVG to a PIL Image so CustomTkinter can use it."""
-        try:
-            drawing = svg2rlg(file_path)
-            # Scaling the drawing to fit the requested size
-            scaling_factor = size[0] / drawing.width
-            drawing.width *= scaling_factor
-            drawing.height *= scaling_factor
-            drawing.scale(scaling_factor, scaling_factor)
+    def get_asset(self, file_path, size=(20, 20), fallback_color="white"):
+        if os.path.exists(file_path) and file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+            try:
+                img = Image.open(file_path)
+                return ctk.CTkImage(light_image=img, dark_image=img, size=size)
+            except Exception as e:
+                print(f"Error loading {file_path}: {e}")
 
-            # Render SVG to PNG in memory
-            png_data = renderPM.drawToString(drawing, fmt="PNG")
-            img = Image.open(io.BytesIO(png_data))
-            return ctk.CTkImage(light_image=img, dark_image=img, size=size)
-        except Exception as e:
-            print(f"Error processing SVG {file_path}: {e}")
-            return self.get_fallback_image(size)
-
-    def get_fallback_image(self, size):
-        """Creates a simple square if the SVG fails to load."""
-        dummy_img = Image.new("RGBA", size, (255, 255, 255, 0))  # Transparent
+        dummy_img = Image.new("RGB", size, fallback_color)
         return ctk.CTkImage(light_image=dummy_img, size=size)
-
-    def get_asset(self, file_path, size=(20, 20)):
-        """Checks if file is SVG or PNG and routes to the correct loader."""
-        if not os.path.exists(file_path):
-            return self.get_fallback_image(size)
-
-        if file_path.lower().endswith(".svg"):
-            return self.load_svg(file_path, size)
-        else:
-            img = Image.open(file_path)
-            return ctk.CTkImage(light_image=img, dark_image=img, size=size)
 
     def setup_sidebar(self):
         self.sidebar = ctk.CTkFrame(self, width=250, corner_radius=0, fg_color=self.sidebar_color)
         self.sidebar.grid(row=0, column=0, sticky="nsew")
 
+        # 'HR' Header
         hr_label = ctk.CTkLabel(self.sidebar, text="HR", text_color="white",
                                 font=("Arial", 18, "bold"), anchor="w")
         hr_label.grid(row=0, column=0, padx=20, pady=(30, 20), sticky="w")
 
-        # Note: You can now use .svg paths here!
+        # Sidebar Buttons Data (Update these paths to your actual PNG files)
         menu_items = [
-            ("Add Employee", "assets/add-employe.svg"),
-            ("Edit Employee", "assets/edit.svg"),
-            ("Delete Employee", "assets/delete.svg"),
-            ("Search Employee", "assets/search.svg"),
-            ("View Employee", "assets/view.svg"),
-            ("Leave Request Form", "assets/leave.svg")
+            ("Add Employee", "C:\\Users\Debian\Documents\HRA\BITS-EMS\\assets\Add_user.png"),
+            ("Edit Employee", "C:\\Users\Debian\Documents\HRA\BITS-EMS\\assets\Edit_user.png"),
+            ("Delete Employee", "C:\\Users\Debian\Documents\HRA\BITS-EMS\\assets\Remove_user.png"),
+            ("Search Employee", "C:\\Users\Debian\Documents\HRA\BITS-EMS\\assets\View_employee.png"),
+            ("View Employee", "C:\\Users\Debian\Documents\HRA\BITS-EMS\\assets\Search_employe.png"),
+            ("Leave Request Form", "C:\\Users\Debian\Documents\HRA\BITS-EMS\\assets\Leave_request.png")
         ]
 
         for i, (text, path) in enumerate(menu_items):
@@ -86,11 +61,12 @@ class EmployeeDashboard(ctk.CTk):
                 image=self.get_asset(path),
                 fg_color="transparent",
                 text_color="white",
-                hover_color="#76A835",
+                hover_color="#C8D7E2",
                 anchor="w",
                 font=("Arial", 13),
                 height=45
             )
+            # row i+1 because HR label is at row 0
             btn.grid(row=i + 1, column=0, padx=10, pady=2, sticky="ew")
 
     def setup_main_content(self):
@@ -103,31 +79,37 @@ class EmployeeDashboard(ctk.CTk):
         notif_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         notif_frame.grid(row=0, column=0, padx=30, pady=20, sticky="e")
 
-        notif_text = ctk.CTkLabel(notif_frame, text="▲ Your leave balance is finished.",
-                                  text_color="gray", font=("Arial", 11))
+        notif_text = ctk.CTkLabel(notif_frame,
+            compound="left",
+            padx=8,
+            image=self.get_asset("C:\\Users\Debian\Documents\HRA\BITS-EMS\\assets\Warning.png", (11, 11), "gray"),
+            text="Your leave balance is finished.",
+            anchor="w",
+            text_color="gray",
+            font=("Arial", 11))
+
         notif_text.pack(side="left", padx=10)
 
-        # Notification Bell (SVG)
         bell_btn = ctk.CTkButton(notif_frame, text="", width=35, height=35,
                                  corner_radius=17, fg_color="#C8E6C9",
-                                 image=self.get_asset("assets/bell.svg", (18, 18)),
+                                 image=self.get_asset("C:\\Users\Debian\Documents\HRA\BITS-EMS\\assets\\Notification_Bell.png", (18, 18), "green"),
                                  hover=False)
         bell_btn.pack(side="left")
 
         # -- Main Title --
         title_label = ctk.CTkLabel(
             self.main_frame,
-            text="EMPLOYEE INFORMATION\nDESK",
+            text="EMPLOYEE INFORMATION DESK",
             font=("Arial", 42, "bold"),
             text_color=self.text_color_primary,
             justify="left"
         )
         title_label.grid(row=1, column=0, padx=60, pady=(60, 0), sticky="nw")
 
-        # -- Bottom Hero Image (Usually PNG/JPG as it's a photo) --
-        hero_img = self.get_asset("assets/team.png", size=(700, 300))
+        # -- Bottom Hero Image --
+        hero_img = self.get_asset("C:\\Users\Debian\Documents\HRA\BITS-EMS\\assets\Bits_College_Logo.png", size=(500, 200), fallback_color="#E0E0E0")
         image_label = ctk.CTkLabel(self.main_frame, text="", image=hero_img)
-        image_label.grid(row=2, column=0, padx=40, pady=40, sticky="s")
+        image_label.grid(row=2, column=0, padx=40, pady=100, sticky="s")
 
 
 if __name__ == "__main__":
