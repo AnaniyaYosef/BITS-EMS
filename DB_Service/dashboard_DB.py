@@ -166,3 +166,35 @@ class DashboardDB:
             conn.close()
 
         return alerts
+
+    def fetch_pending_leave_count(self):
+        """
+        Returns the number of LeaveRecord entries with status 'Pending'.
+        """
+        conn = self.get_connection()
+        if not conn:
+            return 0
+
+        cursor = conn.cursor()
+        count = 0
+        try:
+            query = "SELECT COUNT(*) FROM LeaveRecord WHERE status = 'Pending' AND Active = 1"
+            cursor.execute(query)
+            result = cursor.fetchone()
+            if result:
+                count = result[0]
+        except mysql.connector.Error as err:
+            print(f"Error fetching pending leaves: {err}")
+        except Exception as e:
+            print(f"Unexpected error fetching pending leaves: {e}")
+        finally:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+        return count

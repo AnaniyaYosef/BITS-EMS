@@ -123,3 +123,25 @@ class Dashboard:
 
         ctk.CTkButton(frame, text="View All", fg_color="transparent", text_color="#B91C1C",
                       hover_color="#FEE2E2", font=("Arial", 11, "bold"), height=25).pack(pady=10)
+
+    def fetch_pending_leave_count(self):
+        """
+        Returns the number of Leave Records with status 'Pending'.
+        """
+        conn = self.get_connection()
+        if not conn:
+            return 0
+
+        cursor = conn.cursor()
+        count = 0
+        try:
+            query = "SELECT COUNT(*) FROM LeaveRecord WHERE status = 'Pending' AND Active = 1"
+            cursor.execute(query)
+            count = cursor.fetchone()[0]
+        except Exception as e:
+            print(f"Error fetching pending leaves: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+
+        return count
