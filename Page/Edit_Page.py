@@ -5,15 +5,17 @@ from customtkinter.windows.widgets.font import customtkinter_directory
 
 class Edit(CTkScrollableFrame):
     def __init__(self, master):
-        super().__init__(master, width=300, height=200)
+        super().__init__(master, width=600, height=500)
         self.grid_columnconfigure(0, weight=1)
+
         self._top_frame()
         self._middle_frame()
         self._address_frame()
+        self._file_upload_frame()
         self._bottom_frame()
 
         self.save_btn = customtkinter.CTkButton(self, text="Save changes")
-        self.save_btn.grid(row=3, column=0)
+        self.save_btn.grid(row=5, column=0)
 
         self.grid(sticky="nsew")
 
@@ -166,7 +168,7 @@ class Edit(CTkScrollableFrame):
         self._employee_status_label.grid(row=0, column=0, padx=20)
         self._employee_status_entry.grid(row=0, column=1, padx=20)
 
-        self._bottom_frame_container.grid(row=3, column=0, pady=20)
+        self._bottom_frame_container.grid(row=4, column=0, pady=20)
 
     def _address_frame(self):
         self._address_container = customtkinter.CTkFrame(self, fg_color="transparent")
@@ -218,6 +220,31 @@ class Edit(CTkScrollableFrame):
         self._houseNO_entry.grid(row=5, column=1)
 
         self._address_container.grid(row=2, column=0)
+
+    def _file_upload_frame(self):
+        self.file_upload_container = customtkinter.CTkFrame(self)
+
+        self._certificate_button = customtkinter.CTkButton(
+            self.file_upload_container, text="Upload Certificate"
+        )
+        self._certificate_button.grid(row=0, column=0)
+
+        self._resume_button = customtkinter.CTkButton(
+            self.file_upload_container, text="Upload CV / Resume"
+        )
+        self._resume_button.grid(row=0, column=1)
+
+        self._contract_button = customtkinter.CTkButton(
+            self.file_upload_container, text="Upload Contract"
+        )
+        self._contract_button.grid(row=1, column=0)
+
+        self._id_document_button = customtkinter.CTkButton(
+            self.file_upload_container, text="Upload ID Document"
+        )
+        self._id_document_button.grid(row=1, column=1)
+
+        self.file_upload_container.grid(row=3, column=0)
 
     def search_emp(self):
         print("Button clicked")
