@@ -171,7 +171,7 @@ class Edit(CTkFrame):
 
         empId: str = self._search_bar.get().strip()
 
-        if empId is "":
+        if empId == "":
             return
         else:
             # result = self.editDB.search_emp(empId)
