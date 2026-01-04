@@ -1,19 +1,21 @@
 import customtkinter
-from customtkinter import CTkFrame
+from customtkinter import CTkFrame, CTkScrollableFrame
+from customtkinter.windows.widgets.font import customtkinter_directory
 
 
-class Edit(CTkFrame):
+class Edit(CTkScrollableFrame):
     def __init__(self, master):
-        super().__init__(master, fg_color="transparent")
+        super().__init__(master, width=300, height=200)
         self.grid_columnconfigure(0, weight=1)
         self._top_frame()
         self._middle_frame()
+        self._address_frame()
         self._bottom_frame()
 
         self.save_btn = customtkinter.CTkButton(self, text="Save changes")
         self.save_btn.grid(row=3, column=0)
 
-        self.grid()
+        self.grid(sticky="nsew")
 
     def _top_frame(self):
         self._top_frame_container = customtkinter.CTkFrame(self, fg_color="transparent")
@@ -144,8 +146,8 @@ class Edit(CTkFrame):
         self._job_category_label.grid(row=8, column=1)
         self._job_category_entry.grid(row=9, column=1)
 
-        self._department_label.grid(row=10, column=0)
-        self._department_entry.grid(row=11, column=0)
+        self._department_label.grid(row=10, column=1)
+        self._department_entry.grid(row=11, column=1)
 
         self._container.grid(row=1, column=0)
 
@@ -164,7 +166,58 @@ class Edit(CTkFrame):
         self._employee_status_label.grid(row=0, column=0, padx=20)
         self._employee_status_entry.grid(row=0, column=1, padx=20)
 
-        self._bottom_frame_container.grid(row=2, column=0, pady=20)
+        self._bottom_frame_container.grid(row=3, column=0, pady=20)
+
+    def _address_frame(self):
+        self._address_container = customtkinter.CTkFrame(self, fg_color="transparent")
+
+        self._citizenship_label = customtkinter.CTkLabel(
+            self._address_container, text="Citizenship"
+        )
+        self._citizenship_entry = customtkinter.CTkEntry(self._address_container)
+
+        self._citizenship_label.grid(row=0, column=0)
+        self._citizenship_entry.grid(row=1, column=0)
+
+        self._city_label = customtkinter.CTkLabel(self._address_container, text="City")
+        self._city_entry = customtkinter.CTkEntry(self._address_container)
+
+        self._city_label.grid(row=0, column=1)
+        self._city_entry.grid(row=1, column=1)
+
+        self._subcity_label = customtkinter.CTkLabel(
+            self._address_container, text="Subcity"
+        )
+        self._subcity_entry = customtkinter.CTkEntry(self._address_container)
+
+        self._subcity_label.grid(row=2, column=0)
+        self._subcity_entry.grid(row=3, column=0)
+
+        self._woreda_label = customtkinter.CTkLabel(
+            self._address_container, text="Woreda"
+        )
+        self._woreda_entry = customtkinter.CTkEntry(self._address_container)
+
+        self._woreda_label.grid(row=2, column=1)
+        self._woreda_entry.grid(row=3, column=1)
+
+        self._kebele_label = customtkinter.CTkLabel(
+            self._address_container, text="Kebele"
+        )
+        self._kebele_entry = customtkinter.CTkEntry(self._address_container)
+
+        self._kebele_label.grid(row=4, column=0)
+        self._kebele_entry.grid(row=5, column=0)
+
+        self._houseNo_label = customtkinter.CTkLabel(
+            self._address_container, text="House No."
+        )
+        self._houseNO_entry = customtkinter.CTkEntry(self._address_container)
+
+        self._houseNo_label.grid(row=4, column=1)
+        self._houseNO_entry.grid(row=5, column=1)
+
+        self._address_container.grid(row=2, column=0)
 
     def search_emp(self):
         print("Button clicked")
@@ -206,6 +259,7 @@ if __name__ == "__main__":
 
     root = customtkinter.CTk()
     root.grid_columnconfigure(0, weight=1)
+    root.grid_rowconfigure(0, weight=1)
     root.title("Edit page")
     Edit(root)
     root.mainloop()
