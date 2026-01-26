@@ -169,10 +169,6 @@ class EmployeeDashboard(ctk.CTk):
         self.notif_label.pack(side="right")
 
     def update_header_status(self):
-        """
-        Fetches data and updates the text next to the bell.
-        Priority: Contract Expiry (Red) > Pending Leaves (Orange) > Normal (Green)
-        """
         # 1. Check Contracts
         alerts = self.db.fetch_contract_alerts()
 
@@ -193,9 +189,6 @@ class EmployeeDashboard(ctk.CTk):
         self.notif_label.configure(text=text, text_color=color)
 
     def toggle_notifications(self):
-        """
-        Opens or closes a popup list of notifications.
-        """
         # If popup is already open, destroy it (toggle off)
         if self.notification_popup is not None and self.notification_popup.winfo_exists():
             self.notification_popup.destroy()
@@ -269,7 +262,7 @@ class EmployeeDashboard(ctk.CTk):
 
 if __name__ == "__main__":
     app = EmployeeDashboard()
-    icon_path = "C:\\Users\\Debian\\Documents\\HRA\\BITS-EMS\\assets\\Bar_Bits_College_Logo.ico"
+    icon_path = "assets\\Bar_Bits_College_Logo.ico"
     if os.path.exists(icon_path):
         try:
             app.iconbitmap(icon_path)

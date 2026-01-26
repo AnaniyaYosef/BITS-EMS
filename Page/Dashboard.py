@@ -106,7 +106,6 @@ class Dashboard:
         ctk.CTkLabel(header_frame, text="⚠ Contract Expiry Alerts", font=("Arial", 14, "bold"),
                      text_color="#B91C1C").pack(side="left")
 
-        # --- FETCH FROM DB ---
         alerts = self.db.fetch_contract_alerts()
 
         if not alerts:
@@ -125,9 +124,7 @@ class Dashboard:
                       hover_color="#FEE2E2", font=("Arial", 11, "bold"), height=25).pack(pady=10)
 
     def fetch_pending_leave_count(self):
-        """
-        Returns the number of Leave Records with status 'Pending'.
-        """
+
         conn = self.get_connection()
         if not conn:
             return 0
