@@ -5,6 +5,9 @@ from dotenv import load_dotenv  # pip install python-dotenv
 load_dotenv()
 
 
+
+
+
 class DashboardDB:
     def __init__(self):
         # Update these credentials to match your local MySQL setup
