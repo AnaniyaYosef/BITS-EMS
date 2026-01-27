@@ -1,14 +1,11 @@
-"""
-Modern Login page for BITS-EMS application
-"""
+
 import customtkinter as ctk
 from PIL import Image, ImageTk
 import os
 from DB_Service.Login_db import LoginDB
 
 class LoginPage(ctk.CTkFrame):
-    """Modern login page with enhanced styling"""
-    
+ 
     def __init__(self, master):
         super().__init__(master)
         
@@ -22,8 +19,7 @@ class LoginPage(ctk.CTkFrame):
         # Configure grid layout
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
-        
-        # Create main container with gradient effect simulation
+
         self.main_container = ctk.CTkFrame(
             self, 
             corner_radius=0,
@@ -88,12 +84,10 @@ class LoginPage(ctk.CTkFrame):
             fg_color="transparent"
         )
         self.right_panel.grid(row=0, column=1, sticky="nsew", padx=80)
-        
-        # Center the login form
+
         self.form_container = ctk.CTkFrame(self.right_panel, fg_color="transparent")
         self.form_container.place(relx=0.5, rely=0.5, anchor="center")
-        
-        # Welcome header
+
         welcome_header = ctk.CTkLabel(
             self.form_container,
             text="Welcome Back",
@@ -181,8 +175,7 @@ class LoginPage(ctk.CTkFrame):
             width=0
         )
         self.forgot_button.pack(side="right")
-        
-        # Login button with hover effect
+
         self.login_button = ctk.CTkButton(
             self.form_container,
             text="Sign In",
@@ -230,7 +223,6 @@ class LoginPage(ctk.CTkFrame):
         self.after(100, self.username_entry.focus)
     
     def validate_login(self):
-        """Validate login credentials with enhanced feedback"""
         username = self.username_entry.get().strip()
         password = self.password_entry.get().strip()
         
@@ -259,11 +251,15 @@ class LoginPage(ctk.CTkFrame):
             
             if user:
                 self.show_success(f"Welcome, {user.get('full_name', user['username'])}!")
-                # You would typically navigate to dashboard here
                 print(f"Login successful: {user['username']}")
                 
-                # Example: Transition to main application
-                # self.master.show_dashboard(user)
+                # ================================================
+                # REDIRECT BUTTON FOR DEVELOPERS AFTER SUCCESSFUL LOGIN
+                # ================================================
+                # This section provides a clear redirect mechanism
+                # to implement the actual navigation to the main application or dashboard
+                self.create_redirect_button(user)
+                
             else:
                 self.show_error("Invalid username or password")
                 self.password_entry.delete(0, 'end')
@@ -274,6 +270,82 @@ class LoginPage(ctk.CTkFrame):
         finally:
             # Restore button state
             self.login_button.configure(text=original_text, state="normal")
+    
+    def create_redirect_button(self, user):
+        if hasattr(self, 'redirect_button') and self.redirect_button.winfo_exists():
+            return
+        self.redirect_frame = ctk.CTkFrame(self.form_container, fg_color="transparent")
+        self.redirect_frame.pack(pady=(20, 0))
+
+        self.redirect_button = ctk.CTkButton(
+            self.redirect_frame,
+            text="Go to Dashboard",
+            command=lambda: self.navigate_to_dashboard(user),
+            width=350,
+            height=50,
+            corner_radius=8,
+            font=ctk.CTkFont(family="Segoe UI", size=16, weight="bold"),
+            fg_color="#2c3e50",
+            hover_color="#34495e",
+            text_color="white"
+        )
+        self.redirect_button.pack()
+
+        self.redirect_label = ctk.CTkLabel(
+            self.redirect_frame,
+            text="(Developers: Implement actual dashboard navigation here)",
+            font=ctk.CTkFont(family="Segoe UI", size=10, slant="italic"),
+            text_color="#95a5a6"
+        )
+        self.redirect_label.pack(pady=(10, 0))
+        
+        print("Redirect button created. Implement navigate_to_dashboard() function for actual navigation.")
+    
+    def navigate_to_dashboard(self, user):
+        """
+        Placeholder function for dashboard navigation
+        
+        This function should be implemented by other developers to handle the actual
+        transition from the login page to the main application or dashboard.
+        
+        Suggestions for implementation:
+            1. Hide or remove the login page
+            2. Create and display the dashboard frame/window
+            3. Pass user information to the dashboard
+            4. Initialize dashboard components
+            
+        Args:
+            user: Dictionary containing user information (username, full_name, role, etc.)
+        """
+        
+        # ================================================
+        # DEVELOPER TODO: Implement actual navigation logic
+        # ================================================
+        
+        # Current placeholder behavior (will be replaced by actual implementation)
+        print(f"Navigating to dashboard for user: {user['username']}")
+        print("ROLE:", user.get('role', 'user'))
+        print("USER DATA:", user)
+        
+        # Example implementation (uncomment and customize):
+        #
+        # from Page.Home_page import HomePage
+        # 
+        # # Hide login page
+        # self.pack_forget()
+        # 
+        # # Create and show dashboard
+        # self.dashboard = HomePage(self.master, user)
+        # self.dashboard.pack(expand=True, fill="both")
+        # 
+        # # Optional: Update window title
+        # self.master.title(f"BITS-EMS - Dashboard ({user['username']})")
+        
+        # Show temporary alert for demonstration
+        self.status_label.configure(
+            text="✓ Redirect button clicked! Implement actual navigation in navigate_to_dashboard()",
+            text_color="#3498db"
+        )
     
     def show_error(self, message):
         """Display error message with red styling"""
@@ -291,9 +363,9 @@ class LoginPage(ctk.CTkFrame):
     
     def forgot_password(self):
         """Handle forgot password functionality"""
-        # Placeholder for forgot password functionality
+
         print("Forgot password clicked")
-        # You can implement password reset flow here
+
     
     def on_closing(self):
         """Clean up resources when closing"""
@@ -301,7 +373,6 @@ class LoginPage(ctk.CTkFrame):
             self.login_db.close()
     
     def toggle_theme(self):
-        """Toggle between light and dark mode"""
         current_mode = ctk.get_appearance_mode()
         new_mode = "dark" if current_mode == "light" else "light"
         ctk.set_appearance_mode(new_mode)
