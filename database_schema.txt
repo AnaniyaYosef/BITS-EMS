@@ -1,0 +1,137 @@
+DROP DATABASE IF EXISTS BITS_EMS;
+CREATE DATABASE BITS_EMS;
+
+USE BITS_EMS;
+
+DROP TABLE IF EXISTS Employee;
+CREATE TABLE Employee(
+    `EmpID` INT NOT NULL PRIMARY KEY,
+    `DepID` INT NOT NULL,
+    `job_title_id` INT NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `date_of_birth` DATE NOT NULL,
+    `gender` VARCHAR(50) NOT NULL,
+    `hire_date` DATE NOT NULL,
+    `employment_status` VARCHAR(50) NOT NULL,
+    `Manager` BOOLEAN NOT NULL,
+    `Active` BOOLEAN NOT NULL
+);
+
+DROP TABLE IF EXISTS Department;
+CREATE TABLE Department(
+    `DepID` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `DepName` VARCHAR(255) NOT NULL,
+    `manager_id` INT NOT NULL,
+    `Active` BOOLEAN NOT NULL
+);
+
+DROP TABLE IF EXISTS JobTitle;
+CREATE TABLE JobTitle(
+    `job_title_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `title_name` VARCHAR(255) NOT NULL,
+    `description` LONGTEXT NOT NULL,
+    `Active` BOOLEAN NOT NULL
+);
+
+DROP TABLE IF EXISTS UserAccount;
+CREATE TABLE UserAccount(
+    `user_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `userName` VARCHAR(255) NOT NULL,
+    `password` VARCHAR(255) NOT NULL,
+    `role` VARCHAR(50) NOT NULL,
+    `EmpID` INT NOT NULL,
+    `Active` BOOLEAN NOT NULL
+);
+
+DROP TABLE IF EXISTS Document;
+CREATE TABLE Document(
+    `document_id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `EmpID` INT NOT NULL,
+    `document_type` VARCHAR(100) NOT NULL,
+    `file_path` TEXT NOT NULL,
+    `upload_date` DATE NOT NULL,
+    `Active` BOOLEAN NOT NULL
+);
+
+DROP TABLE IF EXISTS LeaveRecord;
+CREATE TABLE LeaveRecord(
+    `leave_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `EmpID` INT NOT NULL,
+    `leave_type` VARCHAR(100) NOT NULL,
+    `start_date` DATE NOT NULL,
+    `end_date` DATE NOT NULL,
+    `total_day` INT NOT NULL,
+    `status` VARCHAR(50) NOT NULL,
+    `Active` BOOLEAN NOT NULL
+);
+
+DROP TABLE IF EXISTS Contract;
+CREATE TABLE Contract(
+    `contract_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `EmpID` INT NOT NULL,
+    `start_date` DATE NOT NULL,
+    `end_date` DATE NOT NULL,
+    `contract_type` VARCHAR(100) NOT NULL,
+    `Active` BOOLEAN NOT NULL
+);
+
+DROP TABLE IF EXISTS Address;
+CREATE TABLE Address(
+    `address_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `country` VARCHAR(100) NOT NULL,
+    `Citizenship` VARCHAR(80) NOT NULL,
+    `city` VARCHAR(100) NOT NULL,
+    `sub_city` VARCHAR(100) NOT NULL,
+    `woreda` VARCHAR(255) NOT NULL,
+    `kebele` VARCHAR(255) NOT NULL,
+    `house_number` INT NOT NULL,
+    `Active` BOOLEAN NOT NULL,
+    `EmpID` INT NOT NULL,
+    `phone_number` VARCHAR(50) NOT NULL,
+    `emergency_contact` VARCHAR(50) NOT NULL,
+    `email` VARCHAR(255) NOT NULL
+);
+
+DROP TABLE IF EXISTS employee_History;
+CREATE TABLE employee_History(
+    `employee_history_ID` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `EmpID` INT NOT NULL,
+    `DepID` INT NOT NULL,
+    `job_title_id` INT NOT NULL,
+    `start_date` DATE NOT NULL,
+    `end_date` DATE NOT NULL,
+    `reason` LONGTEXT
+);
+
+ALTER TABLE Contract 
+ADD CONSTRAINT `contract_empid_foreign` FOREIGN KEY(`EmpID`) REFERENCES Employee(`EmpID`);
+
+ALTER TABLE LeaveRecord 
+ADD CONSTRAINT `leaverecord_empid_foreign` FOREIGN KEY(`EmpID`) REFERENCES Employee(`EmpID`);
+
+ALTER TABLE Document 
+ADD CONSTRAINT `document_empid_foreign` FOREIGN KEY(`EmpID`) REFERENCES Employee(`EmpID`);
+
+ALTER TABLE Address 
+ADD CONSTRAINT `address_empid_foreign` FOREIGN KEY(`EmpID`) REFERENCES Employee(`EmpID`);
+
+ALTER TABLE Department 
+ADD CONSTRAINT `department_manager_id_foreign` FOREIGN KEY(`manager_id`) REFERENCES Employee(`EmpID`);
+
+ALTER TABLE Employee 
+ADD CONSTRAINT `employee_job_title_id_foreign` FOREIGN KEY(`job_title_id`) REFERENCES JobTitle(`job_title_id`);
+
+ALTER TABLE UserAccount 
+ADD CONSTRAINT `useraccount_empid_foreign` FOREIGN KEY(`EmpID`) REFERENCES Employee(`EmpID`);
+
+ALTER TABLE Employee 
+ADD CONSTRAINT `employee_depid_foreign` FOREIGN KEY(`DepID`) REFERENCES Department(`DepID`);
+
+ALTER TABLE employee_History 
+ADD CONSTRAINT `employee_History_empid_foreign` FOREIGN KEY(`EmpID`) REFERENCES Employee(`EmpID`);
+
+ALTER TABLE employee_History 
+ADD CONSTRAINT `employee_History_depid_foreign` FOREIGN KEY(`DepID`) REFERENCES Department(`DepID`);
+
+ALTER TABLE employee_History 
+ADD CONSTRAINT `employee_History_job_title_id_foreign` FOREIGN KEY(`job_title_id`) REFERENCES JobTitle(`job_title_id`);
