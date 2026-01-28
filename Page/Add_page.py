@@ -3,6 +3,8 @@ from tkinter import filedialog
 from tkcalendar import DateEntry
 from PIL import Image, ImageTk
 import datetime
+from utils import EmployeeFile
+from DB_Service import Add_DB
 
 ctk.set_appearance_mode("Light")
 app = ctk.CTk()
@@ -15,8 +17,46 @@ def upload_file(label):
     if file_path:
         label.configure(text=file_path.split("/")[-1])
 
+def ClearFiled():
+    full_name_entry.delete(0, "end")
+    contact_entry.delete(0, "end")
+    email_entry.delete(0, "end")
+    emergency_contact_entry.delete(0, "end")
+
+
+    dob_entry.set_date(datetime.date.today())
+    hire_date_entry.set_date(datetime.date.today())
+
+
+    department_option.set("IT")
+    gender_option.set("Male")
+
+
 def submit():
-    print("Submit")
+    EmpId = ""
+    full_name = full_name_entry.get()
+    dob = dob_entry.get()
+    contact = contact_entry.get()
+    email = email_entry.get()
+    department = department_option.get()
+
+
+    gender = gender_option.get()
+    emergency_contact = emergency_contact_entry.get()
+    hire_date = hire_date_entry.get()
+    
+    file = {
+        "image": getattr(image_label, "file_path", None),
+        "cv": getattr(cv_label, "file_path", None),
+        "certificate": getattr(cert_label, "file_path", None),
+        "id": getattr(id_label, "file_path", None),
+        "contract": getattr(contract_label, "file_path", None),
+    }
+    save_file = EmployeeFile.SaveEmpFile(EmployeeId=EmpId,files=file)
+
+
+
+    ClearFiled()
 
 #-----Frames-------
 main_frame = ctk.CTkFrame(app)
