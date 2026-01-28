@@ -29,4 +29,7 @@ def CreateEmpTable():
     except Exception as e:
         print("Error Emp DB Failed!,",e)
 
+
+
+
 CreateEmpTable()
