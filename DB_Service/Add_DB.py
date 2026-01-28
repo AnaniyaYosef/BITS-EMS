@@ -8,6 +8,8 @@ db = mysql.connector.connect(
 )
 cursor = db.cursor()
 
+
+
 def CreateEmpTable():
     try:
         cursor.execute("""
@@ -23,7 +25,8 @@ def CreateEmpTable():
         active TINYINT(1) DEFAULT 1,
 
         FOREIGN KEY (DepID) REFERENCES department(DepID) ON DELETE SET NULL)""")
+        print("Emp DB Created")
     except Exception as e:
-        print(e)
+        print("Error Emp DB Failed!,",e)
 
 CreateEmpTable()
