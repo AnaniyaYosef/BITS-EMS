@@ -3,3 +3,6 @@ mysql-connector-python
 pillow
 python-dotenv
 bcrypt
+shutil
+os
+
