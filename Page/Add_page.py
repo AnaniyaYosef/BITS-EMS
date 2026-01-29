@@ -12,11 +12,13 @@ from DB_Service.Dep_job_db import DepJobDB
 
 ctk.set_appearance_mode("Light")
 
-class AddEmployeeApp(ctk.CTk):
-    def __init__(self):
-        super().__init__()
-        self.title("BITS-EMS | Add New Employee")
-        self.geometry("1100x900")
+class AddEmployeeApp(ctk.CTkToplevel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        self.title("Add New Employee")
+        self.geometry("1100x850")
+        self.attributes('-topmost', True)
         
         self.db_service = DepJobDB()
         
@@ -145,23 +147,6 @@ class AddEmployeeApp(ctk.CTk):
                 messagebox.showinfo("Success", f"Saved! ID: {emp_id}")
         except Exception as e:
             messagebox.showerror("Error", str(e))
-
-# In Page/Add_page.py
-class AddEmployeeWindow(ctk.CTkToplevel): 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.title("Add New Employee")
-        self.geometry("1100x850")
-    
-        self.attributes('-topmost', True) 
-
-        self.db_service = DepJobDB()
-        self.dept_data = self.db_service.get_all_departments()
-        self.job_data = self.db_service.get_all_job_titles()
-
-        self.setup_ui()
-
-
 
 
 

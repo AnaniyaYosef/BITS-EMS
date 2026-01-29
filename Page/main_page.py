@@ -95,15 +95,15 @@ class EmployeeDashboard(ctk.CTk):
         hr_label.grid(row=0, column=0, padx=20, pady=(30, 20), sticky="w")
 
         menu_items = [
-            ("Add Employee", "Add_user.png"),
-            ("Edit Employee", "Edit_user.png"),
-            ("Delete Employee", "Remove_user.png"),
-            ("Search Employee", "View_employee.png"),
-            ("View Employee", "Search_employe.png"),
-            ("Leave Request Form", "Leave_request.png")
+            ("Add Employee", "Add_user.png", self.open_add_employee_window), 
+            ("Edit Employee", "Edit_user.png", None),
+            ("Delete Employee", "Remove_user.png", None),
+            ("Search Employee", "View_employee.png", None),
+            ("View Employee", "Search_employe.png", None),
+            ("Leave Request Form", "Leave_request.png", None)
         ]
 
-        for i, (text, path) in enumerate(menu_items):
+        for i, (text, path, cmd) in enumerate(menu_items):
             img = self.get_asset(path, size=(20, 20), fallback_color="#FFFFFF")
             btn = ctk.CTkButton(
                 self.sidebar,
@@ -114,7 +114,8 @@ class EmployeeDashboard(ctk.CTk):
                 hover_color="#C8D7E2",
                 anchor="w",
                 font=("Arial", 14),
-                height=45
+                height=45,
+                command=cmd  
             )
             btn.grid(row=i + 1, column=0, padx=10, pady=2, sticky="ew")
 
@@ -129,6 +130,17 @@ class EmployeeDashboard(ctk.CTk):
             height=40
         )
         logout_btn.grid(row=8, column=0, padx=20, pady=30, sticky="ew")
+
+    # --- FIXED: RENAMED TO MATCH SIDEBAR AND CHANGED TO POPUP LOGIC ---
+    def open_add_employee_window(self):
+        try:
+            from Page.Add_page import AddEmployeeApp
+            # Creates a new independent window
+            add_window = AddEmployeeApp()
+            add_window.attributes("-topmost", True)
+            add_window.focus()
+        except Exception as e:
+            print(f"Error opening Add Page Window: {e}")
 
     def setup_main_frame_structure(self):
         self.main_frame = ctk.CTkFrame(self, fg_color=self.white_bg, corner_radius=0, border_width=0)
@@ -149,75 +161,65 @@ class EmployeeDashboard(ctk.CTk):
         notif_frame = ctk.CTkFrame(header_container, fg_color="transparent")
         notif_frame.pack(side="right", anchor="e")
 
-        # Bell Button - Now calls toggle_notifications
+        # Bell Button
         self.bell_btn = ctk.CTkButton(notif_frame, text="", width=40, height=40,
                                       corner_radius=20, fg_color="#E8F5E9",
                                       image=self.get_asset("Notification_Bell.png", (20, 20), "green"),
                                       hover_color="#C8E6C9",
-                                      command=self.toggle_notifications)  # Linked to function
+                                      command=self.toggle_notifications)  
         self.bell_btn.pack(side="right", padx=(10, 0))
 
-        # Notification Label (Saved as self.notif_label so we can update text later)
+        # Notification Label
         self.notif_label = ctk.CTkLabel(notif_frame,
                                         compound="left",
                                         padx=8,
                                         image=self.get_asset("Warning.png", (14, 14), "gray"),
-                                        text="Checking System...",  # Default text
+                                        text="Checking System...",  
                                         anchor="e",
                                         text_color="gray",
                                         font=("Arial", 12, "bold"))
         self.notif_label.pack(side="right")
 
     def update_header_status(self):
-        # 1. Check Contracts
         alerts = self.db.fetch_contract_alerts()
-
-        # 2. Check Pending Leaves
         pending_leaves = self.db.fetch_pending_leave_count()
 
         if alerts:
             count = len(alerts)
             text = f"System Alert: {count} Contracts Expiring Soon"
-            color = "#D32F2F"  # Red
+            color = "#D32F2F"  
         elif pending_leaves > 0:
             text = f"Action Needed: {pending_leaves} Leave Requests Pending"
-            color = "#F57C00"  # Orange
+            color = "#F57C00"  
         else:
             text = "System Status: Normal"
-            color = "#2E7D32"  # Green
+            color = "#2E7D32"  
 
         self.notif_label.configure(text=text, text_color=color)
 
     def toggle_notifications(self):
-        # If popup is already open, destroy it (toggle off)
         if self.notification_popup is not None and self.notification_popup.winfo_exists():
             self.notification_popup.destroy()
             self.notification_popup = None
             return
 
-        # Fetch data
         alerts = self.db.fetch_contract_alerts()
         pending_leaves = self.db.fetch_pending_leave_count()
 
-        # If no notifications, show a toast or simple popup
         if not alerts and pending_leaves == 0:
-            # Simple Frame
             self.notification_popup = ctk.CTkFrame(self.main_frame, fg_color="#F1F8E9", corner_radius=10,
-                                                   border_width=1, border_color="green")
+                                                    border_width=1, border_color="green")
             self.notification_popup.place(relx=0.96, rely=0.12, anchor="ne")
             ctk.CTkLabel(self.notification_popup, text="No new notifications", padx=20, pady=10).pack()
             return
 
-        # Create Dropdown Frame
         self.notification_popup = ctk.CTkFrame(self.main_frame, fg_color="white",
-                                               corner_radius=10, border_width=1, border_color="#E0E0E0", width=300)
-        # Position it absolutely below the bell (adjust relx/rely as needed)
+                                                corner_radius=10, border_width=1, border_color="#E0E0E0", width=300)
         self.notification_popup.place(relx=0.96, rely=0.12, anchor="ne")
 
         ctk.CTkLabel(self.notification_popup, text="Notifications", font=("Arial", 14, "bold"), text_color="#333").pack(
             anchor="w", padx=15, pady=(15, 5))
 
-        # Add Alerts (Expiring Contracts)
         if alerts:
             ctk.CTkLabel(self.notification_popup, text="⚠ Contracts Expiring", font=("Arial", 12, "bold"),
                          text_color="#D32F2F").pack(anchor="w", padx=15, pady=(5, 0))
@@ -227,7 +229,6 @@ class EmployeeDashboard(ctk.CTk):
                 ctk.CTkLabel(row, text=f"{name_dept}\n{time_msg}", font=("Arial", 11), text_color="#333",
                              justify="left").pack(anchor="w", padx=5, pady=5)
 
-        # Add Pending Leaves
         if pending_leaves > 0:
             ctk.CTkLabel(self.notification_popup, text="✎ Leave Requests", font=("Arial", 12, "bold"),
                          text_color="#F57C00").pack(anchor="w", padx=15, pady=(10, 0))
@@ -236,11 +237,6 @@ class EmployeeDashboard(ctk.CTk):
             ctk.CTkLabel(row, text=f"{pending_leaves} requests waiting for approval.", font=("Arial", 11),
                          text_color="#333").pack(anchor="w", padx=5, pady=5)
 
-            # Button to go to Leave page (Optional - functionality depends on your Leave page)
-            ctk.CTkButton(row, text="View", height=20, width=50, fg_color="#F57C00", text_color="white").pack(
-                anchor="e", padx=5, pady=5)
-
-        # Close button for the popup
         ctk.CTkButton(self.notification_popup, text="Close", fg_color="#EEE", text_color="#333", hover_color="#DDD",
                       height=25, command=self.toggle_notifications).pack(pady=10)
 
@@ -249,13 +245,11 @@ class EmployeeDashboard(ctk.CTk):
             grid_info = widget.grid_info()
             if 'row' in grid_info and int(grid_info['row']) > 0:
                 widget.destroy()
-        # Also close notification popup if open
         if self.notification_popup and self.notification_popup.winfo_exists():
             self.notification_popup.destroy()
 
     def show_dashboard(self):
         self.clear_content()
-        # Refresh notification text every time we go home
         self.update_header_status()
         Dashboard(self, self.main_frame)
 
