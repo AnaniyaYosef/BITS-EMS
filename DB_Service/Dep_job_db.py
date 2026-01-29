@@ -3,10 +3,10 @@ import mysql.connector
 class DepJobDB:
     def __init__(self):
         self.db_config = {
-            "host": "127.0.0.1",
+            "host": "localhost",
             "user": "root",
-            "password": "@Mendelivium", 
-            "database": "bits_ems_project"
+            "password": "sql2707", 
+            "database": "bits-ems"
         }
 
     def execute_query(self, query, params=None, is_select=False):
@@ -25,15 +25,51 @@ class DepJobDB:
             cursor.close()
             conn.close()
 
-    def insert_department(self, name, faculty, manager_id, status):
-        """Adds a new department record using a VARCHAR(20) manager_id."""
-        query = "INSERT INTO departments (dept_name, faculty, manager_id, status) VALUES (%s, %s, %s, %s)"
-        return self.execute_query(query, (name, faculty, manager_id, status))
+    def create_job_title_table(self):
+        """Creates the JobTitle table if it doesn't already exist."""
+        query = """
+        CREATE TABLE IF NOT EXISTS JobTitle (
+            job_title_id INT AUTO_INCREMENT PRIMARY KEY,
+            title_name VARCHAR(255) NOT NULL,
+            description LONGTEXT,
+            Active BOOLEAN NOT NULL DEFAULT 1
+        );
+        """
+        return self.execute_query(query)
 
+    def create_department_table(self):
+        """Creates the Department table based on your exact SQL."""
+        query = """
+        CREATE TABLE IF NOT EXISTS Department (
+            DepID INT AUTO_INCREMENT PRIMARY KEY,
+            DepName VARCHAR(255) NOT NULL,
+            manager_id VARCHAR(20) NULL,
+            Active BOOLEAN NOT NULL DEFAULT 1
+        );
+        """
+        return self.execute_query(query)
+
+    def insert_department(self, name, manager_id, active):
+        """Adds a new department record using a VARCHAR(20) manager_id."""
+        query = "INSERT INTO departments (DepName,manager_id, Active) VALUES (%s, %s, %s)"
+        return self.execute_query(query, (name,manager_id, active))
+    
+    def insert_job_title(self, title, description, active=True):
+        query = "INSERT INTO JobTitle (title_name, description, Active) VALUES (%s, %s, %s)"
+        return self.execute_query(query, (title, description, active))
+
+    def get_all_departments(self, only_active=True):
+        """Fetches departments for dropdowns or lists."""
+        if only_active:
+            query = "SELECT DepID, DepName FROM Department WHERE Active = 1"
+        else:
+            query = "SELECT * FROM Department"
+        return self.execute_query(query, is_select=True)
+    
     def search_managers(self, name_query):
         """Find names that match the user's typing for the Smart Search."""
-        # Use execute_query to keep it consistent and safe
-        query = "SELECT full_name FROM employees WHERE full_name LIKE %s LIMIT 5"
+        # Note: Ensure your 'employees' table actually has 'full_name'
+        query = "SELECT full_name FROM employee WHERE full_name LIKE %s LIMIT 5"
         return self.execute_query(query, (f'%{name_query}%',), is_select=True)
 
     def get_manager_id(self, full_name):

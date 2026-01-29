@@ -14,20 +14,31 @@ def CreateEmpTable():
     try:
         cursor.execute("""
         CREATE TABLE employee(
-        EmpID INT AUTO_INCREMENT PRIMARY KEY,
-        DepID INT,
-        name VARCHAR(100) NOT NULL,
-        date_of_birth DATE,
-        hire_date DATE,
-        gender ENUM('Male','Female'),
-        employment_status TINYINT(1) DEFAULT 1,
-        Manager TINYINT(1) DEFAULT 0,
-        active TINYINT(1) DEFAULT 1,
-
-        FOREIGN KEY (DepID) REFERENCES department(DepID) ON DELETE SET NULL)""")
-        print("Emp DB Created")
+            EmpID INT AUTO_INCREMENT PRIMARY KEY,
+            DepID INT,
+            job_title_id INT,
+            name VARCHAR(255) NOT NULL,
+            date_of_birth DATE NOT NULL,
+            gender ENUM('Male','Female'),
+            hire_date DATE,
+            employment_status VARCHAR(50) NOT NULL,
+            manager BOOLEAN NOT NULL DEFAULT FALSE,  -- Added manager column
+            active BOOLEAN NOT NULL DEFAULT 1,
+            CONSTRAINT employee_depid_fk 
+                FOREIGN KEY (DepID) REFERENCES department(DepID),
+            CONSTRAINT employee_jobtitle_fk 
+                FOREIGN KEY (job_title_id) REFERENCES jobtitle(job_title_id)
+        )""")
+        print("Employee table created successfully!")
     except Exception as e:
-        print("Error Emp DB Failed!,",e)
+        print("Error creating employee table:", e)
 
+def DropEmployeeTable():
+    """Drop the employee table if it exists"""
+    try:
+        cursor.execute("DROP TABLE IF EXISTS employee")
+        print("Employee table dropped successfully!")
+    except Exception as e:
+        print("Error dropping employee table:", e)
 
 CreateEmpTable()
