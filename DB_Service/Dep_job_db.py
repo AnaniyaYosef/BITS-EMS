@@ -1,101 +1,169 @@
 import mysql.connector
+from datetime import datetime
 
-class DepJobDB:
+class DBService:
     def __init__(self):
         self.db_config = {
             "host": "localhost",
             "user": "root",
-            "password": "sql2707", 
+            "password": "sql2707",
             "database": "bits-ems"
         }
 
-    def execute_query(self, query, params=None, is_select=False):
-        """Helper to ensure we always have a valid connection/cursor."""
-        conn = mysql.connector.connect(**self.db_config)
-        cursor = conn.cursor()
+    def get_connection(self):
         try:
-            cursor.execute(query, params)
-            if is_select:
-                result = cursor.fetchall()
-                return result
-            else:
-                conn.commit()
-                return True
-        finally:
-            cursor.close()
-            conn.close()
+            return mysql.connector.connect(**self.db_config)
+        except mysql.connector.Error as err:
+            print(f"Error connecting to DB: {err}")
+            return None
 
-    def create_job_title_table(self):
-        """Creates the JobTitle table if it doesn't already exist."""
+    def search_employees(self, query):
+        conn = self.get_connection()
+        if not conn: return []
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM employee WHERE name LIKE %s AND active = 1 LIMIT 5", (f"%{query}%",))
+        results = cursor.fetchall()
+        conn.close()
+        return results
+
+    def get_employee_details(self, name):
+        conn = self.get_connection()
+        if not conn: return None
+        cursor = conn.cursor()
+        cursor.execute("SELECT EmpID, DepID FROM employee WHERE name = %s", (name,))
+        data = cursor.fetchone()
+        conn.close()
+        return data
+
+    def create_contract(self, emp_id, start_date, end_date, contract_type):
+        conn = self.get_connection()
+        if not conn: return False
+        cursor = conn.cursor()
+        
+        # Check if Contract table exists
+        cursor.execute("SHOW TABLES LIKE 'Contract'")
+        if not cursor.fetchone():
+            # Create Contract table if it doesn't exist
+            create_query = """
+            CREATE TABLE IF NOT EXISTS Contract (
+                ContractID INT AUTO_INCREMENT PRIMARY KEY,
+                EmpID INT NOT NULL,
+                start_date DATE NOT NULL,
+                end_date DATE NOT NULL,
+                contract_type VARCHAR(50) NOT NULL,
+                Active BOOLEAN NOT NULL DEFAULT 1,
+                FOREIGN KEY (EmpID) REFERENCES employee(EmpID)
+            )
+            """
+            cursor.execute(create_query)
+        
         query = """
-        CREATE TABLE IF NOT EXISTS JobTitle (
-            job_title_id INT AUTO_INCREMENT PRIMARY KEY,
-            title_name VARCHAR(255) NOT NULL,
-            description LONGTEXT,
-            Active BOOLEAN NOT NULL DEFAULT 1
-        );
+            INSERT INTO Contract (EmpID, start_date, end_date, contract_type, Active) 
+            VALUES (%s, %s, %s, %s, 1)
         """
-        return self.execute_query(query)
+        cursor.execute(query, (emp_id, start_date, end_date, contract_type))
+        conn.commit()
+        conn.close()
+        return True
 
-    def create_department_table(self):
-        """Creates the Department table based on your exact SQL."""
-        query = """
-        CREATE TABLE IF NOT EXISTS Department (
-            DepID INT AUTO_INCREMENT PRIMARY KEY,
-            DepName VARCHAR(255) NOT NULL,
-            manager_id VARCHAR(20) NULL,
-            Active BOOLEAN NOT NULL DEFAULT 1
-        );
-        """
-        return self.execute_query(query)
-
-    def insert_department(self, name, manager_id, active):
-        """Adds a new department record using a VARCHAR(20) manager_id."""
-        query = "INSERT INTO departments (DepName,manager_id, Active) VALUES (%s, %s, %s)"
-        return self.execute_query(query, (name,manager_id, active))
-    
-    def insert_job_title(self, title, description, active=True):
-        query = "INSERT INTO JobTitle (title_name, description, Active) VALUES (%s, %s, %s)"
-        return self.execute_query(query, (title, description, active))
-
-    def get_all_departments(self, only_active=True):
-        """Fetches departments for dropdowns or lists."""
-        if only_active:
-            query = "SELECT DepID, DepName FROM Department WHERE Active = 1"
+    def get_active_contracts(self, search_term=None):
+        """Get all active contracts with optional search filter"""
+        conn = self.get_connection()
+        if not conn: return []
+        cursor = conn.cursor()
+        
+        if search_term:
+            query = """
+                SELECT c.ContractID, c.EmpID, e.name, d.DepName as department, 
+                       c.start_date, c.end_date, c.contract_type
+                FROM Contract c
+                JOIN employee e ON c.EmpID = e.EmpID
+                LEFT JOIN Department d ON e.DepID = d.DepID
+                WHERE c.Active = 1 
+                AND (e.name LIKE %s OR c.EmpID LIKE %s OR c.ContractID LIKE %s)
+                ORDER BY c.end_date ASC
+            """
+            search_pattern = f"%{search_term}%"
+            cursor.execute(query, (search_pattern, search_pattern, search_pattern))
         else:
-            query = "SELECT * FROM Department"
-        return self.execute_query(query, is_select=True)
-    
-    def search_managers(self, name_query):
-        """Find names that match the user's typing for the Smart Search."""
-        # Note: Ensure your 'employees' table actually has 'full_name'
-        query = "SELECT full_name FROM employee WHERE full_name LIKE %s LIMIT 5"
-        return self.execute_query(query, (f'%{name_query}%',), is_select=True)
+            query = """
+                SELECT c.ContractID, c.EmpID, e.name, d.DepName as department, 
+                       c.start_date, c.end_date, c.contract_type
+                FROM Contract c
+                JOIN employee e ON c.EmpID = e.EmpID
+                LEFT JOIN Department d ON e.DepID = d.DepID
+                WHERE c.Active = 1 
+                ORDER BY c.end_date ASC
+            """
+            cursor.execute(query)
+        
+        results = cursor.fetchall()
+        conn.close()
+        return results
 
-    def get_manager_id(self, full_name):
-        """Get the VARCHAR(20) ID for the selected name."""
-        query = "SELECT employee_id FROM employees WHERE full_name = %s"
-        result = self.execute_query(query, (full_name,), is_select=True)
-        return result[0][0] if result else None
-    
-    def get_all_job_titles(self, only_active=True):
-        query = "SELECT job_title_id, title_name FROM jobtitle"
-        if only_active: query += " WHERE Active = 1"
-        return self.execute_query(query, is_select=True)
+    def get_contract_history(self, search_term=None):
+        """Get contract history (inactive/ended contracts)"""
+        conn = self.get_connection()
+        if not conn: return []
+        cursor = conn.cursor()
+        
+        if search_term:
+            query = """
+                SELECT c.ContractID, c.EmpID, e.name, c.start_date, c.end_date, c.contract_type
+                FROM Contract c
+                JOIN employee e ON c.EmpID = e.EmpID
+                WHERE c.Active = 0 
+                AND (e.name LIKE %s OR c.EmpID LIKE %s OR c.ContractID LIKE %s)
+                ORDER BY c.end_date DESC
+            """
+            search_pattern = f"%{search_term}%"
+            cursor.execute(query, (search_pattern, search_pattern, search_pattern))
+        else:
+            query = """
+                SELECT c.ContractID, c.EmpID, e.name, c.start_date, c.end_date, c.contract_type
+                FROM Contract c
+                JOIN employee e ON c.EmpID = e.EmpID
+                WHERE c.Active = 0 
+                ORDER BY c.end_date DESC
+            """
+            cursor.execute(query)
+        
+        results = cursor.fetchall()
+        conn.close()
+        return results
 
-    def insert_employee(self, dep_id, job_id, name, email, contact, emergency, dob, gender, hire_date, status, is_manager=False):
-        """Adds a new employee with all captured fields."""
-        query = """
-        INSERT INTO employee (
-            DepID, job_title_id, name, email, contact_number, 
-            emergency_contact, date_of_birth, gender, hire_date, 
-            employment_status, manager, active
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1)
-        """
-        params = (dep_id, job_id, name, email, contact, emergency, dob, gender, hire_date, status, is_manager)
-        return self.execute_query(query, params)
+    def end_contract(self, contract_id):
+        """Mark a contract as inactive (ended)"""
+        conn = self.get_connection()
+        if not conn: return False
+        cursor = conn.cursor()
+        
+        query = "UPDATE Contract SET Active = 0 WHERE ContractID = %s"
+        cursor.execute(query, (contract_id,))
+        conn.commit()
+        success = cursor.rowcount > 0
+        conn.close()
+        return success
 
-    def get_latest_emp_id(self):
-            query = "SELECT LAST_INSERT_ID()"
-            result = self.execute_query(query, is_select=True)
-            return result[0][0] if result else None
+    def get_contract_stats(self):
+        """Get contract statistics"""
+        conn = self.get_connection()
+        if not conn: return {}
+        cursor = conn.cursor()
+        
+        stats = {}
+        
+        # Count active contracts
+        cursor.execute("SELECT COUNT(*) FROM Contract WHERE Active = 1")
+        stats['active'] = cursor.fetchone()[0]
+        
+        # Count expired contracts (end date < today)
+        cursor.execute("SELECT COUNT(*) FROM Contract WHERE Active = 1 AND end_date < CURDATE()")
+        stats['expired'] = cursor.fetchone()[0]
+        
+        # Count expiring soon (within 30 days)
+        cursor.execute("SELECT COUNT(*) FROM Contract WHERE Active = 1 AND end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)")
+        stats['expiring_soon'] = cursor.fetchone()[0]
+        
+        conn.close()
+        return stats

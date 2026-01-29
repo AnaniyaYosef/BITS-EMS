@@ -86,7 +86,7 @@ class EmployeeDashboard(ctk.CTk):
         self.sidebar = ctk.CTkFrame(self, width=250, corner_radius=0,
                                     fg_color=self.sidebar_color, border_width=0)
         self.sidebar.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
-        self.sidebar.grid_rowconfigure(7, weight=1)
+        self.sidebar.grid_rowconfigure(10, weight=1)
 
         hr_label = ctk.CTkLabel(self.sidebar, text="HR", text_color="white",
                                 font=("Arial", 20, "bold"), anchor="w")
@@ -95,11 +95,12 @@ class EmployeeDashboard(ctk.CTk):
         menu_items = [
             ("Add Employee", "Add_user.png", self.open_add_employee_window), 
             ("Edit Employee", "Edit_user.png", self.open_edit_window),
-            ("Delete Employee", "Remove_user.png", None),
+            ("Remove Employee", "Remove_user.png", self.open_delete_window),
             ("Search Employee", "View_employee.png", self.open_search_window),
             ("Leave Request Form", "Leave_request.png", None),
-            ("Create Contract Form", "Leave_request.png", None),
-            ("View Contract Form", "Leave_request.png", None)
+            ("Employee Contract", "Leave_request.png", self.open_contract_window),
+            ("View Contract Form", "Leave_request.png", None),
+            ("Department/Job", "Leave_request.png", None)
 
         ]
 
@@ -129,8 +130,63 @@ class EmployeeDashboard(ctk.CTk):
             font=("Arial", 14, "bold"),
             height=40
         )
-        logout_btn.grid(row=8, column=0, padx=20, pady=30, sticky="ew")
+        logout_btn.grid(row=9, column=0, padx=20, pady=30, sticky="ew")
 
+    def open_contract_window(self):
+        """Opens the Contract Management page."""
+        try:
+            from Page.Contracts_Page import ContractPage
+            
+            contract_window = ContractPage()
+            contract_window.attributes("-topmost", True)
+            contract_window.focus()
+            
+        except Exception as e:
+            print(f"Error opening Contract Window: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def open_delete_window(self):
+        """Opens the Delete Employee page in a new independent window."""
+        try:
+            from Page.Delete_Page import DeleteEmployeePage  # Adjust import path if needed
+            
+            delete_window = ctk.CTkToplevel(self)
+            delete_window.title("Delete Employee")
+            delete_window.geometry("600x500")
+            delete_window.resizable(False, False)
+            
+            # Set the window background color to match your theme
+            delete_window.configure(fg_color="#FFFFFF")
+            
+            # Make the window modal (optional)
+            delete_window.grab_set()
+            
+            # Create a container frame with proper colors
+            container = ctk.CTkFrame(
+                delete_window, 
+                fg_color="#FFFFFF",  # White background to match your theme
+                corner_radius=0
+            )
+            container.pack(fill="both", expand=True, padx=0, pady=0)
+            
+            # Add the Delete frame to the container
+            delete_frame = DeleteEmployeePage(container)
+            delete_frame.pack(fill="both", expand=True, padx=10, pady=10)
+            
+            # Center the window on screen
+            delete_window.update_idletasks()
+            width = delete_window.winfo_width()
+            height = delete_window.winfo_height()
+            x = (delete_window.winfo_screenwidth() // 2) - (width // 2)
+            y = (delete_window.winfo_screenheight() // 2) - (height // 2)
+            delete_window.geometry(f'{width}x{height}+{x}+{y}')
+            
+        except Exception as e:
+            print(f"Error opening Delete Window: {e}")
+            import traceback
+            traceback.print_exc()
+    
     def open_edit_window(self):
         """Opens the Edit Employee page in a new independent window."""
         try:
@@ -141,11 +197,22 @@ class EmployeeDashboard(ctk.CTk):
             edit_window.geometry("900x700")
             edit_window.resizable(True, True)
             
+            # Set the window background color to match your theme
+            edit_window.configure(fg_color="#FFFFFF")
+            
             # Make the window modal (optional)
             edit_window.grab_set()
             
-            # Add the Edit frame to the window
-            edit_frame = Edit(edit_window)
+            # Create a container frame with proper colors
+            container = ctk.CTkFrame(
+                edit_window, 
+                fg_color="#FFFFFF",  # White background to match your theme
+                corner_radius=0
+            )
+            container.pack(fill="both", expand=True, padx=0, pady=0)
+            
+            # Add the Edit frame to the container
+            edit_frame = Edit(container)
             edit_frame.pack(fill="both", expand=True, padx=10, pady=10)
             
             # Handle window close

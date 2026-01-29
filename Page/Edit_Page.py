@@ -21,8 +21,13 @@ class Edit(CTkScrollableFrame):
         self.grid_columnconfigure(0, weight=1)
         self.configure(fg_color="white")
 
-        self.edit_db = EditDB()  # DB service
-        self.current_emp_id = None  # Track current employee being edited
+        self.edit_db = EditDB()  
+        self.current_emp_id = None  
+
+        self.bg_color = "white"
+        self.frame_bg_color = "white"
+        self.primary_color = "#1faa5b"
+        self.hover_color = "#17914b"
 
         self._top_frame()
         self._middle_frame()
