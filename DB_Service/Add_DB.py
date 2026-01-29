@@ -30,6 +30,4 @@ def CreateEmpTable():
         print("Error Emp DB Failed!,",e)
 
 
-
-
 CreateEmpTable()

@@ -3,6 +3,7 @@ from tkinter import filedialog
 from tkcalendar import DateEntry
 from PIL import Image, ImageTk
 import datetime
+import os
 from utils import EmployeeFile
 from DB_Service import Add_DB
 
@@ -52,7 +53,7 @@ def submit():
         "id": getattr(id_label, "file_path", None),
         "contract": getattr(contract_label, "file_path", None),
     }
-    save_file = EmployeeFile.SaveEmpFile(EmployeeId=EmpId,files=file)
+    #save_file = EmployeeFile.SaveEmpFile(EmployeeId=EmpId,files=file)
 
 
 
