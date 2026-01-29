@@ -3,24 +3,24 @@ from PIL import Image
 import os
 import sys
 
-
+# Ensure project root is on sys.path so imports like `DB_Service` resolve
+# when running this file directly (e.g., `python Page/main_page.py`).
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-
+# Import the Dashboard class and Database
 try:
-
+    # Preferred when running as a package (python -m Page.main_page)
     from .Dashboard import Dashboard
-    from Page.Search_Page import SearchDB, SearchPage
-except (ImportError, Exception):
+except Exception:
     # Fallback when running the file directly (python Page/main_page.py)
     from Dashboard import Dashboard
-    from Page.Search_Page import SearchPage, SearchDB
-    
 
 from DB_Service.dashboard_DB import DashboardDB
-
+from Page.Dashboard import Dashboard
+from Page.Search_Page import SearchPage
+from DB_Service.dashboard_DB import DashboardDB
 
 class EmployeeDashboard(ctk.CTk):
     def __init__(self):
@@ -51,11 +51,7 @@ class EmployeeDashboard(ctk.CTk):
         # 4. Create Sections
         self.setup_sidebar()
         self.setup_main_frame_structure()
-
-        # 5. Load Default View (Dashboard)
         self.show_dashboard()
-
-        # 6. Trigger initial notification check
         self.update_header_status()
 
     def get_asset(self, file_path, size=(20, 20), fallback_color="gray"):
@@ -98,11 +94,13 @@ class EmployeeDashboard(ctk.CTk):
 
         menu_items = [
             ("Add Employee", "Add_user.png", self.open_add_employee_window), 
-            ("Edit Employee", "Edit_user.png", None),
+            ("Edit Employee", "Edit_user.png", self.open_edit_window),
             ("Delete Employee", "Remove_user.png", None),
-            ("Search Employee", "View_employee.png", self.show_search_page),
-            ("View Employee", "Search_employe.png", None),
-            ("Leave Request Form", "Leave_request.png", None)
+            ("Search Employee", "View_employee.png", self.open_search_window),
+            ("Leave Request Form", "Leave_request.png", None),
+            ("Create Contract Form", "Leave_request.png", None),
+            ("View Contract Form", "Leave_request.png", None)
+
         ]
 
         for i, (text, path, cmd) in enumerate(menu_items):
@@ -133,13 +131,44 @@ class EmployeeDashboard(ctk.CTk):
         )
         logout_btn.grid(row=8, column=0, padx=20, pady=30, sticky="ew")
 
-    def show_search_page(self):
-        self.clear_content() # Clears the current frame
-        self.update_header_status() # Keeps your top bar fresh
+    def open_edit_window(self):
+        """Opens the Edit Employee page in a new independent window."""
+        try:
+            from Page.Edit_Page import Edit  
+            
+            edit_window = ctk.CTkToplevel(self)
+            edit_window.title("Edit Employee Information")
+            edit_window.geometry("900x700")
+            edit_window.resizable(True, True)
+            
+            # Make the window modal (optional)
+            edit_window.grab_set()
+            
+            # Add the Edit frame to the window
+            edit_frame = Edit(edit_window)
+            edit_frame.pack(fill="both", expand=True, padx=10, pady=10)
+            
+            # Handle window close
+            def on_closing():
+                if hasattr(edit_frame, 'cleanup'):
+                    edit_frame.cleanup()
+                edit_window.destroy()
+            
+            edit_window.protocol("WM_DELETE_WINDOW", on_closing)
+            
+        except Exception as e:
+            print(f"Error opening Edit Window: {e}")
+            import traceback
+            traceback.print_exc()
 
-        # Initialize and pack the Search Page
-        self.search_frame = SearchPage(self.main_frame, self)
-        self.search_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=20)
+    def open_search_window(self):
+        """Opens the Search Directory in a new independent window."""
+        try:
+            from Page.Search_Page import SearchPage
+            search_popup = SearchPage(self,self) 
+            search_popup.focus()
+        except Exception as e:
+            print(f"Error opening Search Window: {e}")
 
     def open_add_employee_window(self):
         try:

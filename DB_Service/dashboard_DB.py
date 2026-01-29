@@ -1,8 +1,4 @@
 import mysql.connector
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class DashboardDB:
     def __init__(self):
@@ -17,116 +13,158 @@ class DashboardDB:
         try:
             return mysql.connector.connect(**self.db_config)
         except mysql.connector.Error as err:
-            print(f"Error connecting to database: {err}")
+            print("DB Connection Error:", err)
             return None
 
+    # =========================
+    # TOTAL EMPLOYEES
+    # =========================
     def fetch_total_employees(self):
         conn = self.get_connection()
         if not conn: return 0
         cursor = conn.cursor()
         try:
-            # Updated to lowercase table 'employee' and 'active'
             cursor.execute("SELECT COUNT(*) FROM employee WHERE active = 1")
-            result = cursor.fetchone()
-            return result[0] if result else 0
+            return cursor.fetchone()[0]
         finally:
             cursor.close()
             conn.close()
 
+    # =========================
+    # TOP DASHBOARD STATS
+    # =========================
     def fetch_top_stats(self):
         conn = self.get_connection()
         if not conn: return []
         cursor = conn.cursor()
-        stats = {"Full Time": 0, "Contract": 0, "Interns": 0, "On Leave": 0}
+
+        stats = {
+            "Full-Time": 0,
+            "Part-Time": 0,
+            "Interns": 0,
+            "On Leave": 0
+        }
 
         try:
-            # Updated to lowercase 'contract'
-            query_contracts = "SELECT contract_type, COUNT(*) FROM contract WHERE active = 1 GROUP BY contract_type"
-            cursor.execute(query_contracts)
-            for c_type, count in cursor.fetchall():
-                key = c_type.strip().title()
-                if key in stats: stats[key] = count
-                elif "Full" in key: stats["Full Time"] += count
-                elif "Intern" in key: stats["Interns"] += count
+            # Full-Time / Part-Time
+            cursor.execute("""
+                SELECT employment_status, COUNT(*) 
+                FROM employee 
+                WHERE active = 1 
+                GROUP BY employment_status
+            """)
+            for status, count in cursor.fetchall():
+                if status in stats:
+                    stats[status] = count
 
-            # Updated to lowercase 'leaverecord'
-            query_leave = """
-                SELECT COUNT(*) FROM leaverecord 
-                WHERE status = 'Approved' AND CURDATE() BETWEEN start_date AND end_date AND active = 1
-            """
-            cursor.execute(query_leave)
+            # Interns (job title based)
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM employee e
+                JOIN jobtitle j ON e.job_title_id = j.job_title_id
+                WHERE e.active = 1
+                  AND j.Active = 1
+                  AND LOWER(j.title_name) LIKE '%intern%'
+            """)
+            stats["Interns"] = cursor.fetchone()[0]
+
+            # On Leave (approved & active today)
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM leaverecord
+                WHERE status = 'Approved'
+                  AND Active = 1
+                  AND CURDATE() BETWEEN start_date AND end_date
+            """)
             stats["On Leave"] = cursor.fetchone()[0]
 
         except mysql.connector.Error as err:
-            print(f"Error fetching stats: {err}")
+            print("Dashboard stat error:", err)
+
         finally:
             cursor.close()
             conn.close()
 
         return [
-            ("Full Time", str(stats["Full Time"]), "#2E7D32"),
-            ("Contract", str(stats["Contract"]), "#F9A825"),
+            ("Full Time", str(stats["Full-Time"]), "#2E7D32"),
+            ("Part Time", str(stats["Part-Time"]), "#1565C0"),
             ("Interns", str(stats["Interns"]), "#0277BD"),
             ("On Leave", str(stats["On Leave"]), "#C62828")
         ]
 
+    # =========================
+    # DEPARTMENT DISTRIBUTION
+    # =========================
     def fetch_dept_distribution(self):
         conn = self.get_connection()
         if not conn: return []
         cursor = conn.cursor()
         data = []
+
         try:
-            # Updated to lowercase 'department' and 'employee'
-            query = """
-                SELECT d.DepName, COUNT(e.EmpID) as count
+            cursor.execute("""
+                SELECT d.DepName, COUNT(e.EmpID)
                 FROM department d
-                LEFT JOIN employee e ON d.DepID = e.DepID AND e.active = 1
+                LEFT JOIN employee e 
+                    ON d.DepID = e.DepID AND e.active = 1
                 WHERE d.Active = 1
                 GROUP BY d.DepID, d.DepName
-            """
-            cursor.execute(query)
+            """)
             for name, count in cursor.fetchall():
                 data.append((name, str(count)))
         finally:
             cursor.close()
             conn.close()
+
         return data
 
+    # =========================
+    # CONTRACT EXPIRY ALERTS
+    # =========================
     def fetch_contract_alerts(self):
         conn = self.get_connection()
         if not conn: return []
         cursor = conn.cursor()
         alerts = []
+
         try:
-            # Updated to lowercase 'contract', 'employee', 'department'
-            query = """
-                SELECT e.name, d.DepName, DATEDIFF(c.end_date, CURDATE()) as days_left
+            cursor.execute("""
+                SELECT e.name, d.DepName,
+                       DATEDIFF(c.end_date, CURDATE()) AS days_left
                 FROM contract c
                 JOIN employee e ON c.EmpID = e.EmpID
                 JOIN department d ON e.DepID = d.DepID
-                WHERE c.active = 1
-                  AND c.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-                ORDER BY days_left ASC LIMIT 5
-            """
-            cursor.execute(query)
+                WHERE c.Active = 1
+                  AND c.end_date BETWEEN CURDATE()
+                  AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+                ORDER BY days_left ASC
+                LIMIT 5
+            """)
+
             for name, dept, days in cursor.fetchall():
-                name_display = f"{name} ({dept})"
-                time_msg = "Expires Today" if days == 0 else f"Expires in: {days} Days"
-                alerts.append((name_display, time_msg))
+                msg = "Expires Today" if days == 0 else f"Expires in {days} days"
+                alerts.append((f"{name} ({dept})", msg))
+
         finally:
             cursor.close()
             conn.close()
+
         return alerts
 
+    # =========================
+    # PENDING LEAVE COUNT
+    # =========================
     def fetch_pending_leave_count(self):
         conn = self.get_connection()
         if not conn: return 0
         cursor = conn.cursor()
         try:
-            # Updated to lowercase 'leaverecord'
-            cursor.execute("SELECT COUNT(*) FROM leaverecord WHERE status = 'Pending' AND active = 1")
-            result = cursor.fetchone()
-            return result[0] if result else 0
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM leaverecord
+                WHERE status = 'Pending' AND Active = 1
+            """)
+            return cursor.fetchone()[0]
         finally:
             cursor.close()
             conn.close()

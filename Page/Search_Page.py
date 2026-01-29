@@ -3,94 +3,157 @@ from PIL import Image
 import os
 from DB_Service.Search_db import SearchDB
 
-class SearchPage(ctk.CTkFrame):
+class SearchPage(ctk.CTkToplevel):
     def __init__(self, parent, controller):
-        super().__init__(parent, fg_color="transparent")
+        super().__init__(parent)
+        self.controller = controller
         self.db = SearchDB()
         
+        # --- Window Configuration ---
+        self.title("Employee Directory")
+        self.geometry("1000x750")
+        self.after(200, self.lift) 
+        self.attributes('-topmost', True)
+        self.configure(fg_color="#FFFFFF")
+        
         # --- UI Header ---
-        header = ctk.CTkLabel(self, text="Employee Directory", font=("Arial", 24, "bold"))
-        header.pack(pady=(20, 10))
+        self.header = ctk.CTkLabel(self, text="Employee Directory", font=("Arial", 28, "bold"), text_color="#1D3557")
+        self.header.pack(pady=(30, 10))
 
         # --- Search Bar ---
-        search_container = ctk.CTkFrame(self, fg_color="transparent")
-        search_container.pack(fill="x", padx=50, pady=10)
+        self.search_container = ctk.CTkFrame(self, fg_color="transparent")
+        self.search_container.pack(fill="x", padx=50, pady=10)
 
         self.search_var = ctk.StringVar()
+        # Trace 'write' to update results as you type
         self.search_var.trace_add("write", lambda *args: self.load_results())
         
-        self.search_entry = ctk.CTkEntry(search_container, placeholder_text="Type name or ID to search...", 
-                                        textvariable=self.search_var, height=40)
+        self.search_entry = ctk.CTkEntry(
+            self.search_container, 
+            placeholder_text="Search by Name or Employee ID (e.g. 101)...", 
+            textvariable=self.search_var, 
+            height=45,
+            font=("Arial", 14)
+        )
         self.search_entry.pack(fill="x", side="left", expand=True)
         
         # --- Results Area ---
-        self.results_frame = ctk.CTkScrollableFrame(self, fg_color="#2B2B2B")
+        self.results_frame = ctk.CTkScrollableFrame(
+            self, 
+            fg_color="#F8FAFC", 
+            border_width=1, 
+            border_color="#E2E8F0"
+        )
         self.results_frame.pack(pady=20, padx=50, fill="both", expand=True)
         
+        # Initial call to show all employees on startup
         self.load_results()
+        self.search_entry.focus()
 
     def load_results(self):
+        # Clear frame
         for widget in self.results_frame.winfo_children():
             widget.destroy()
             
-        employees = self.db.search_all_employees(self.search_var.get())
+        search_query = self.search_var.get()
+        employees = self.db.search_all_employees(search_query)
         
-        for emp in employees:
-            # Create a card-like row for each employee
-            card = ctk.CTkFrame(self.results_frame, height=50, fg_color="#333333")
-            card.pack(fill="x", pady=5, padx=5)
-            
-            info_label = ctk.CTkLabel(card, text=f" {emp['EmpID']} | {emp['name']}", font=("Arial", 13))
-            info_label.pack(side="left", padx=15)
-            
-            dept_label = ctk.CTkLabel(card, text=emp['DepName'], text_color="gray")
-            dept_label.pack(side="left", padx=20)
+        if not employees:
+            no_data = ctk.CTkLabel(self.results_frame, text="No matching employees found.", font=("Arial", 13), text_color="gray")
+            no_data.pack(pady=40)
+            return
 
-            view_btn = ctk.CTkButton(card, text="View Profile", width=100, height=28,
-                                    command=lambda e=emp: self.show_profile(e['EmpID']))
-            view_btn.pack(side="right", padx=10)
+        for emp in employees:
+            # Main Card
+            card = ctk.CTkFrame(self.results_frame, height=75, fg_color="#FFFFFF", border_width=1, border_color="#E2E8F0")
+            card.pack(fill="x", pady=6, padx=10)
+            card.pack_propagate(False) 
+            
+            # Left Side: ID and Name
+            # Formatting ID to look like EMP001
+            display_id = f"EMP{int(emp['employee_id']):03d}" if emp.get('employee_id') else "EMP???"
+            
+            info_label = ctk.CTkLabel(card, text=f"{display_id}  |  {emp['full_name']}", 
+                                     font=("Arial", 15, "bold"), text_color="#1D3557")
+            info_label.pack(side="left", padx=20)
+            
+            # Middle: Department
+            dept_text = f"📍 {emp['department_name']}" if emp.get('department_name') else "No Department"
+            dept_label = ctk.CTkLabel(card, text=dept_text, font=("Arial", 13), text_color="#64748B")
+            dept_label.pack(side="left", padx=40)
+
+            # Right Side: View Button
+            view_btn = ctk.CTkButton(
+                card, text="View Profile", 
+                width=120, 
+                height=35,
+                fg_color="#8CC63F", 
+                hover_color="#7BB035",
+                font=("Arial", 12, "bold"),
+                command=lambda e=emp: self.show_profile(e['employee_id'])
+            )
+            view_btn.pack(side="right", padx=20)
 
     def show_profile(self, emp_id):
         data = self.db.get_full_profile(emp_id)
-        
-        # Popup Window for Profile
+        if not data: 
+            return
+
         profile_win = ctk.CTkToplevel(self)
-        profile_win.title(f"Profile: {data['name']}")
-        profile_win.geometry("450x650")
-        profile_win.attributes('-topmost', True) # Keep on top
+        profile_win.title(f"Profile: {data['full_name']}")
+        profile_win.geometry("480x680")
+        profile_win.attributes('-topmost', True) 
+        profile_win.configure(fg_color="#FFFFFF")
 
-        # Profile Image Section
-        img_path = data.get('profile_image')
+        # --- Profile Image ---
+        img_path = self.db.get_employee_image(emp_id)
+
+        img_container = ctk.CTkFrame(profile_win, width=140, height=140, fg_color="transparent")
+        img_container.pack(pady=25)
+
         if img_path and os.path.exists(img_path):
-            pil_img = Image.open(img_path)
-            ctk_img = ctk.CTkImage(light_image=pil_img, size=(160, 180))
-            img_display = ctk.CTkLabel(profile_win, image=ctk_img, text="")
-            img_display.pack(pady=20)
+            img = Image.open(img_path).resize((120, 120))
+            profile_img = ctk.CTkImage(img, size=(120, 120))
+
+            img_label = ctk.CTkLabel(img_container, image=profile_img, text="")
+            img_label.image = profile_img  # 🚨 keep a reference
+            img_label.pack()
         else:
-            placeholder = ctk.CTkFrame(profile_win, width=160, height=180, fg_color="gray20")
-            placeholder.pack(pady=20)
-            ctk.CTkLabel(placeholder, text="No Image").place(relx=0.5, rely=0.5, anchor="center")
+            # Fallback avatar
+            placeholder = ctk.CTkFrame(
+                img_container,
+                width=120,
+                height=120,
+                fg_color="#F1F5F9",
+                corner_radius=60
+            )
+            placeholder.pack()
+            ctk.CTkLabel(
+                placeholder,
+                text="👤",
+                font=("Arial", 50)
+            ).place(relx=0.5, rely=0.5, anchor="center")
 
-        # Detailed Information
+        # --- DETAILS FRAME: always create, outside image logic ---
         details_frame = ctk.CTkFrame(profile_win, fg_color="transparent")
-        details_frame.pack(fill="both", expand=True, padx=30)
+        details_frame.pack(fill="both", expand=True, padx=45)
 
-        # Labels for details
+        # Mapping your Database columns to the UI rows
         fields = [
-            ("Full Name", data['name']),
-            ("Employee ID", data['EmpID']),
-            ("Department", data['DepName']),
-            ("Position", data['employment_status']),
-            ("Hire Date", data['hire_date']),
+            ("Full Name", data['full_name']),
+            ("Employee ID", f"EMP{int(data['employee_id']):03d}"),
+            ("Department", data['department_name']),
             ("Gender", data['gender']),
-            ("Email", data.get('email', 'Not provided'))
+            ("Email", data['email']),
+            ("Contact", data['contact_number'] if data['contact_number'] else "N/A"),
+            ("Joined Date", data['employment_date'])
         ]
 
         for label, value in fields:
-            f = ctk.CTkFrame(details_frame, fg_color="transparent")
-            f.pack(fill="x", pady=5)
-            ctk.CTkLabel(f, text=f"{label}:", font=("Arial", 12, "bold"), text_color="gray").pack(side="left")
-            ctk.CTkLabel(f, text=f" {value}", font=("Arial", 13)).pack(side="left")
+            row = ctk.CTkFrame(details_frame, fg_color="transparent")
+            row.pack(fill="x", pady=8)
+            ctk.CTkLabel(row, text=f"{label}:", font=("Arial", 12, "bold"), text_color="#64748B", width=120, anchor="w").pack(side="left")
+            ctk.CTkLabel(row, text=f"{value}", font=("Arial", 13), text_color="#1D3557", wraplength=220, justify="left").pack(side="left")
 
-        close_btn = ctk.CTkButton(profile_win, text="Close", command=profile_win.destroy)
-        close_btn.pack(pady=20)
+        ctk.CTkButton(profile_win, text="Close Window", fg_color="#1D3557", height=40, command=profile_win.destroy).pack(pady=30)
+        

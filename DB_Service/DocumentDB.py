@@ -149,9 +149,20 @@ class DocumentDB:
     def deactivate_document(self, document_id):
         """Deactivate a document (soft delete)"""
         return self.update_document(document_id, Active=0)
-
+    
+    def get_employee_image(self, emp_id):
+        query = """
+            SELECT file_path
+            FROM document
+            WHERE EmpID = %s AND document_type = 'image'
+            ORDER BY upload_date DESC
+            LIMIT 1
+        """
+        self.cursor.execute(query, (emp_id,))
+        row = self.cursor.fetchone()
+        return row[0] if row else None
 
 # For other pages to use:
-def get_document_db():
-    """Get DocumentDB instance"""
-    return DocumentDB()
+    def get_document_db():
+        """Get DocumentDB instance"""
+        return DocumentDB()
