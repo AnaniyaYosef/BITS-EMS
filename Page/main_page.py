@@ -97,9 +97,9 @@ class EmployeeDashboard(ctk.CTk):
             ("Edit Employee", "Edit_user.png", self.open_edit_window),
             ("Remove Employee", "Remove_user.png", self.open_delete_window),
             ("Search Employee", "View_employee.png", self.open_search_window),
-            ("Leave Request Form", "Leave_request.png", None),
+            ("Leave Request Form", "Leave_request.png", self.open_leave_request_window),
             ("Employee Contract", "Leave_request.png", self.open_contract_window),
-            ("Department/Job", "Leave_request.png", None)
+            ("Department/Job", "Leave_request.png", self.open_job_title_window)
 
         ]
 
@@ -130,6 +130,29 @@ class EmployeeDashboard(ctk.CTk):
             height=40
         )
         logout_btn.grid(row=9, column=0, padx=20, pady=30, sticky="ew")
+
+    def open_leave_request_window(self):
+        """Opens the Leave Request Management page."""
+        try:
+            from Page.Leave_Req_page import LeaveRequestPage
+            leave_window = LeaveRequestPage(self)
+            leave_window.focus()
+            
+        except Exception as e:
+            print(f"Error opening Leave Request Window: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def open_job_title_window(self):
+        """Opens the Job Title Management page."""
+        try:
+            from Page.Dep_job_page import JobTitlePage
+            job_window = JobTitlePage(self)
+            
+        except Exception as e:
+            print(f"Error opening Job Title Window: {e}")
+            import traceback
+            traceback.print_exc()
 
     def open_contract_window(self):
         """Opens the Contract Management page."""
@@ -239,7 +262,6 @@ class EmployeeDashboard(ctk.CTk):
     def open_add_employee_window(self):
         try:
             from Page.Add_page import AddEmployeeApp
-            # Creates a new independent window
             add_window = AddEmployeeApp()
             add_window.attributes("-topmost", True)
             add_window.focus()

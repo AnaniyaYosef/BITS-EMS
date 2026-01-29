@@ -167,3 +167,313 @@ class DBService:
         
         conn.close()
         return stats
+    
+    def create_job_title_table(self):
+        """Creates the JobTitle table if it doesn't already exist."""
+        conn = self.get_connection()
+        if not conn: return False
+        cursor = conn.cursor()
+        
+        query = """
+        CREATE TABLE IF NOT EXISTS JobTitle (
+            job_title_id INT AUTO_INCREMENT PRIMARY KEY,
+            title_name VARCHAR(255) NOT NULL,
+            description TEXT,
+            Active BOOLEAN NOT NULL DEFAULT 1
+        );
+        """
+        
+        try:
+            cursor.execute(query)
+            conn.commit()
+            return True
+        except mysql.connector.Error as err:
+            print(f"Error creating JobTitle table: {err}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def create_department_table(self):
+        """Creates the Department table if it doesn't exist."""
+        conn = self.get_connection()
+        if not conn: return False
+        cursor = conn.cursor()
+        
+        query = """
+        CREATE TABLE IF NOT EXISTS Department (
+            DepID INT AUTO_INCREMENT PRIMARY KEY,
+            DepName VARCHAR(255) NOT NULL,
+            manager_id INT NULL,
+            Active BOOLEAN NOT NULL DEFAULT 1,
+            FOREIGN KEY (manager_id) REFERENCES employee(EmpID)
+        );
+        """
+        
+        try:
+            cursor.execute(query)
+            conn.commit()
+            return True
+        except mysql.connector.Error as err:
+            print(f"Error creating Department table: {err}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def insert_department(self, name, manager_id, active):
+        """Adds a new department record."""
+        conn = self.get_connection()
+        if not conn: return False
+        cursor = conn.cursor()
+        
+        query = "INSERT INTO Department (DepName, manager_id, Active) VALUES (%s, %s, %s)"
+        
+        try:
+            cursor.execute(query, (name, manager_id, 1 if active else 0))
+            conn.commit()
+            return True
+        except mysql.connector.Error as err:
+            print(f"Error inserting department: {err}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def insert_job_title(self, title, description, active=True):
+        """Adds a new job title record."""
+        conn = self.get_connection()
+        if not conn: return False
+        cursor = conn.cursor()
+        
+        query = "INSERT INTO JobTitle (title_name, description, Active) VALUES (%s, %s, %s)"
+        
+        try:
+            cursor.execute(query, (title, description, 1 if active else 0))
+            conn.commit()
+            return True
+        except mysql.connector.Error as err:
+            print(f"Error inserting job title: {err}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def search_managers(self, name_query):
+        """Search for managers (employees with manager = TRUE)."""
+        conn = self.get_connection()
+        if not conn: return []
+        cursor = conn.cursor()
+        
+        query = """
+        SELECT EmpID, name 
+        FROM employee 
+        WHERE name LIKE %s AND manager = TRUE AND active = 1 
+        LIMIT 5
+        """
+        
+        try:
+            cursor.execute(query, (f"%{name_query}%",))
+            results = cursor.fetchall()
+            return results
+        except mysql.connector.Error as err:
+            print(f"Error searching managers: {err}")
+            return []
+        finally:
+            cursor.close()
+            conn.close()
+
+    def get_manager_id(self, name):
+        """Get employee ID by name."""
+        conn = self.get_connection()
+        if not conn: return None
+        cursor = conn.cursor()
+        
+        query = "SELECT EmpID FROM employee WHERE name = %s"
+        
+        try:
+            cursor.execute(query, (name,))
+            result = cursor.fetchone()
+            return result[0] if result else None
+        except mysql.connector.Error as err:
+            print(f"Error getting manager ID: {err}")
+            return None
+        finally:
+            cursor.close()
+            conn.close()
+
+    def get_all_job_titles(self, search_term=None):
+        """Get all job titles with optional search filter."""
+        conn = self.get_connection()
+        if not conn: return []
+        cursor = conn.cursor()
+        
+        try:
+            if search_term:
+                query = """
+                SELECT j.job_title_id, j.title_name, j.description, j.Active,
+                    COUNT(e.EmpID) as employee_count
+                FROM JobTitle j
+                LEFT JOIN employee e ON j.job_title_id = e.job_title_id AND e.active = 1
+                WHERE j.title_name LIKE %s
+                GROUP BY j.job_title_id, j.title_name, j.description, j.Active
+                ORDER BY j.title_name
+                """
+                cursor.execute(query, (f"%{search_term}%",))
+            else:
+                query = """
+                SELECT j.job_title_id, j.title_name, j.description, j.Active,
+                    COUNT(e.EmpID) as employee_count
+                FROM JobTitle j
+                LEFT JOIN employee e ON j.job_title_id = e.job_title_id AND e.active = 1
+                GROUP BY j.job_title_id, j.title_name, j.description, j.Active
+                ORDER BY j.title_name
+                """
+                cursor.execute(query)
+            
+            results = cursor.fetchall()
+            return results
+        except mysql.connector.Error as err:
+            print(f"Error getting job titles: {err}")
+            return []
+        finally:
+            cursor.close()
+            conn.close()
+
+    def get_all_departments(self, search_term=None):
+        """Get all departments with optional search filter."""
+        conn = self.get_connection()
+        if not conn: return []
+        cursor = conn.cursor()
+        
+        try:
+            if search_term:
+                query = """
+                SELECT d.DepID, d.DepName, d.manager_id, d.Active,
+                    e.name as manager_name,
+                    COUNT(emp.EmpID) as employee_count
+                FROM Department d
+                LEFT JOIN employee e ON d.manager_id = e.EmpID
+                LEFT JOIN employee emp ON d.DepID = emp.DepID AND emp.active = 1
+                WHERE d.DepName LIKE %s
+                GROUP BY d.DepID, d.DepName, d.manager_id, d.Active, e.name
+                ORDER BY d.DepName
+                """
+                cursor.execute(query, (f"%{search_term}%",))
+            else:
+                query = """
+                SELECT d.DepID, d.DepName, d.manager_id, d.Active,
+                    e.name as manager_name,
+                    COUNT(emp.EmpID) as employee_count
+                FROM Department d
+                LEFT JOIN employee e ON d.manager_id = e.EmpID
+                LEFT JOIN employee emp ON d.DepID = emp.DepID AND emp.active = 1
+                GROUP BY d.DepID, d.DepName, d.manager_id, d.Active, e.name
+                ORDER BY d.DepName
+                """
+                cursor.execute(query)
+            
+            results = cursor.fetchall()
+            return results
+        except mysql.connector.Error as err:
+            print(f"Error getting departments: {err}")
+            return []
+        finally:
+            cursor.close()
+            conn.close()
+
+    def get_job_title_details(self, job_title_id):
+        """Get details of a specific job title."""
+        conn = self.get_connection()
+        if not conn: return None
+        cursor = conn.cursor()
+        
+        query = "SELECT job_title_id, title_name, description, Active FROM JobTitle WHERE job_title_id = %s"
+        
+        try:
+            cursor.execute(query, (job_title_id,))
+            result = cursor.fetchone()
+            return result
+        except mysql.connector.Error as err:
+            print(f"Error getting job title details: {err}")
+            return None
+        finally:
+            cursor.close()
+            conn.close()
+
+    def update_job_title_description(self, job_title_id, description):
+        """Update job title description."""
+        conn = self.get_connection()
+        if not conn: return False
+        cursor = conn.cursor()
+        
+        query = "UPDATE JobTitle SET description = %s WHERE job_title_id = %s"
+        
+        try:
+            cursor.execute(query, (description, job_title_id))
+            conn.commit()
+            return cursor.rowcount > 0
+        except mysql.connector.Error as err:
+            print(f"Error updating job title description: {err}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def toggle_job_title_status(self, job_title_id):
+        """Toggle job title active/inactive status."""
+        conn = self.get_connection()
+        if not conn: return False
+        cursor = conn.cursor()
+        
+        # First get current status
+        cursor.execute("SELECT Active FROM JobTitle WHERE job_title_id = %s", (job_title_id,))
+        result = cursor.fetchone()
+        
+        if not result:
+            return False
+        
+        current_status = result[0]
+        new_status = 0 if current_status == 1 else 1
+        
+        query = "UPDATE JobTitle SET Active = %s WHERE job_title_id = %s"
+        
+        try:
+            cursor.execute(query, (new_status, job_title_id))
+            conn.commit()
+            return cursor.rowcount > 0
+        except mysql.connector.Error as err:
+            print(f"Error toggling job title status: {err}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def toggle_department_status(self, department_id):
+        """Toggle department active/inactive status."""
+        conn = self.get_connection()
+        if not conn: return False
+        cursor = conn.cursor()
+        
+        # First get current status
+        cursor.execute("SELECT Active FROM Department WHERE DepID = %s", (department_id,))
+        result = cursor.fetchone()
+        
+        if not result:
+            return False
+        
+        current_status = result[0]
+        new_status = 0 if current_status == 1 else 1
+        
+        query = "UPDATE Department SET Active = %s WHERE DepID = %s"
+        
+        try:
+            cursor.execute(query, (new_status, department_id))
+            conn.commit()
+            return cursor.rowcount > 0
+        except mysql.connector.Error as err:
+            print(f"Error toggling department status: {err}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()

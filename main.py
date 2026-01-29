@@ -1,8 +1,6 @@
-"""
-Main application entry point for BITS-EMS
-"""
 import customtkinter as ctk
 from Page.Login_page import LoginPage
+import bcrypt
 
 class App(ctk.CTk):
     """Main application window"""

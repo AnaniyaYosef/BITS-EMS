@@ -8,7 +8,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils import EmployeeFile
-from DB_Service.Dep_job_db import DepJobDB
+from DB_Service.Dep_job_db import DBService
 
 ctk.set_appearance_mode("Light")
 
@@ -20,7 +20,7 @@ class AddEmployeeApp(ctk.CTkToplevel):
         self.geometry("1100x850")
         self.attributes('-topmost', True)
         
-        self.db_service = DepJobDB()
+        self.db_service = DBService()
         
         # Load DB Data for dropdowns
         self.dept_data = self.db_service.get_all_departments()
