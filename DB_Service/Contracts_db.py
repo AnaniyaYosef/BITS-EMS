@@ -2,36 +2,51 @@ import mysql.connector
 
 class DBService:
     def __init__(self):
+        # UPDATED: Matched to your working credentials
         self.db_config = {
-            "host": "127.0.0.1",
+            "host": "localhost",
             "user": "root",
-            "password": "@Mendelivium",
-            "database": "bits_ems_project"
+            "password": "sql2707",   # Updated password
+            "database": "bits-ems"    # Updated database name
         }
 
     def get_connection(self):
-        return mysql.connector.connect(**self.db_config)
+        try:
+            return mysql.connector.connect(**self.db_config)
+        except mysql.connector.Error as err:
+            print(f"Error connecting to DB: {err}")
+            return None
 
     def search_employees(self, query):
         conn = self.get_connection()
+        if not conn: return []
         cursor = conn.cursor()
-        cursor.execute("SELECT full_name FROM employees WHERE full_name LIKE %s LIMIT 5", (f"%{query}%",))
+        # FIXED: Table name changed from 'employees' to 'Employee' and column to 'name'
+        cursor.execute("SELECT name FROM Employee WHERE name LIKE %s AND Active = 1 LIMIT 5", (f"%{query}%",))
         results = cursor.fetchall()
         conn.close()
         return results
 
     def get_employee_details(self, name):
         conn = self.get_connection()
+        if not conn: return None
         cursor = conn.cursor()
-        cursor.execute("SELECT employee_id, department FROM employees WHERE full_name = %s", (name,))
+        # FIXED: Table name changed to 'Employee' and 'DepID' (based on your dashboard schema)
+        cursor.execute("SELECT EmpID, DepID FROM Employee WHERE name = %s", (name,))
         data = cursor.fetchone()
         conn.close()
         return data
 
-    def create_contract(self, emp_id, start_date, end_date, status):
+    def create_contract(self, emp_id, start_date, end_date, contract_type):
         conn = self.get_connection()
+        if not conn: return False
         cursor = conn.cursor()
-        query = "INSERT INTO contracts (employee_id, start_date, end_date, status) VALUES (%s, %s, %s, %s)"
-        cursor.execute(query, (emp_id, start_date, end_date, status))
+        # FIXED: Table name changed to 'Contract' and columns matched to Dashboard logic
+        query = """
+            INSERT INTO Contract (EmpID, start_date, end_date, contract_type, Active) 
+            VALUES (%s, %s, %s, %s, 1)
+        """
+        cursor.execute(query, (emp_id, start_date, end_date, contract_type))
         conn.commit()
         conn.close()
+        return True

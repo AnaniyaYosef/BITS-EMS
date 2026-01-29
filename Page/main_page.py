@@ -3,19 +3,21 @@ from PIL import Image
 import os
 import sys
 
-# Ensure project root is on sys.path so imports like `DB_Service` resolve
-# when running this file directly (e.g., `python Page/main_page.py`).
+
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Import the Dashboard class and Database
+
 try:
-    # Preferred when running as a package (python -m Page.main_page)
+
     from .Dashboard import Dashboard
-except Exception:
+    from Page.Search_Page import SearchDB, SearchPage
+except (ImportError, Exception):
     # Fallback when running the file directly (python Page/main_page.py)
     from Dashboard import Dashboard
+    from Page.Search_Page import SearchPage, SearchDB
+    
 
 from DB_Service.dashboard_DB import DashboardDB
 
@@ -98,7 +100,7 @@ class EmployeeDashboard(ctk.CTk):
             ("Add Employee", "Add_user.png", self.open_add_employee_window), 
             ("Edit Employee", "Edit_user.png", None),
             ("Delete Employee", "Remove_user.png", None),
-            ("Search Employee", "View_employee.png", None),
+            ("Search Employee", "View_employee.png", self.show_search_page),
             ("View Employee", "Search_employe.png", None),
             ("Leave Request Form", "Leave_request.png", None)
         ]
@@ -131,7 +133,14 @@ class EmployeeDashboard(ctk.CTk):
         )
         logout_btn.grid(row=8, column=0, padx=20, pady=30, sticky="ew")
 
-    # --- FIXED: RENAMED TO MATCH SIDEBAR AND CHANGED TO POPUP LOGIC ---
+    def show_search_page(self):
+        self.clear_content() # Clears the current frame
+        self.update_header_status() # Keeps your top bar fresh
+
+        # Initialize and pack the Search Page
+        self.search_frame = SearchPage(self.main_frame, self)
+        self.search_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=20)
+
     def open_add_employee_window(self):
         try:
             from Page.Add_page import AddEmployeeApp
