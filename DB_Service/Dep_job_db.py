@@ -77,3 +77,25 @@ class DepJobDB:
         query = "SELECT employee_id FROM employees WHERE full_name = %s"
         result = self.execute_query(query, (full_name,), is_select=True)
         return result[0][0] if result else None
+    
+    def get_all_job_titles(self, only_active=True):
+        query = "SELECT job_title_id, title_name FROM jobtitle"
+        if only_active: query += " WHERE Active = 1"
+        return self.execute_query(query, is_select=True)
+
+    def insert_employee(self, dep_id, job_id, name, email, contact, emergency, dob, gender, hire_date, status, is_manager=False):
+        """Adds a new employee with all captured fields."""
+        query = """
+        INSERT INTO employee (
+            DepID, job_title_id, name, email, contact_number, 
+            emergency_contact, date_of_birth, gender, hire_date, 
+            employment_status, manager, active
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1)
+        """
+        params = (dep_id, job_id, name, email, contact, emergency, dob, gender, hire_date, status, is_manager)
+        return self.execute_query(query, params)
+
+    def get_latest_emp_id(self):
+            query = "SELECT LAST_INSERT_ID()"
+            result = self.execute_query(query, is_select=True)
+            return result[0][0] if result else None

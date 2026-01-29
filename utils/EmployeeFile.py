@@ -1,8 +1,8 @@
 import os
 import shutil
 
-DOCUMENTS_DIR = os.path.join(os.path.expanduser("~"), "Documents")
-MainFolder = os.path.join(DOCUMENTS_DIR, "BITS-EMS_Folder")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MainFolder = os.path.join(BASE_DIR, "Document")
 
 def CreateFolder(EmployeeId):
     EmployeeFolder = f"{EmployeeId}_File"
