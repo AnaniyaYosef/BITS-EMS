@@ -99,7 +99,6 @@ class EmployeeDashboard(ctk.CTk):
             ("Search Employee", "View_employee.png", self.open_search_window),
             ("Leave Request Form", "Leave_request.png", None),
             ("Employee Contract", "Leave_request.png", self.open_contract_window),
-            ("View Contract Form", "Leave_request.png", None),
             ("Department/Job", "Leave_request.png", None)
 
         ]

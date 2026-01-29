@@ -7,14 +7,14 @@ from tkinter import messagebox, Listbox
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import the service we fixed earlier
-from DB_Service.Dep_job_db import DepJobDB 
+from DB_Service.Dep_job_db import DBService 
 
 class DepartmentPage(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent, fg_color="white", corner_radius=0)
         
         # Initialize the database service
-        self.db_service = DepJobDB() 
+        self.db_service = DBService() 
         self.selected_manager_id = None 
 
         # --- UI LAYOUT ---
