@@ -6,9 +6,9 @@ from DB_Service.Login_db import LoginDB
 
 class LoginPage(ctk.CTkFrame):
  
-    def __init__(self, master):
+    def __init__(self, master,on_login_success):
         super().__init__(master)
-        
+        self.on_login_success = on_login_success
         self.master = master
         self.login_db = LoginDB()
         
@@ -251,14 +251,7 @@ class LoginPage(ctk.CTkFrame):
             
             if user:
                 self.show_success(f"Welcome, {user.get('full_name', user['username'])}!")
-                print(f"Login successful: {user['username']}")
-                
-                # ================================================
-                # REDIRECT BUTTON FOR DEVELOPERS AFTER SUCCESSFUL LOGIN
-                # ================================================
-                # This section provides a clear redirect mechanism
-                # to implement the actual navigation to the main application or dashboard
-                self.create_redirect_button(user)
+                self.on_login_success()
                 
             else:
                 self.show_error("Invalid username or password")

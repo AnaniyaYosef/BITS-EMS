@@ -382,7 +382,7 @@ class EmployeeDashboard(ctk.CTk):
 
 if __name__ == "__main__":
     app = EmployeeDashboard()
-    icon_path = "assets\\Bar_Bits_College_Logo.ico"
+    icon_path = "assets\\Bar_Bits_College_Logo."
     if os.path.exists(icon_path):
         try:
             app.iconbitmap(icon_path)

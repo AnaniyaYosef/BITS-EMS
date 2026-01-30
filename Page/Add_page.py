@@ -137,7 +137,8 @@ class AddEmployeeApp(ctk.CTkToplevel):
                 dob=self.dob_entry.get_date().strftime('%Y-%m-%d'),
                 gender=self.gender_option.get(),
                 hire_date=self.hire_entry.get_date().strftime('%Y-%m-%d'),
-                status=self.status_option.get()
+                status=self.status_option.get(),
+                manager = False
             )
 
             if success:

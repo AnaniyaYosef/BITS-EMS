@@ -477,3 +477,58 @@ class DBService:
         finally:
             cursor.close()
             conn.close()
+
+    def insert_employee(self, dep_id, job_id, name, email, contact, emergency, 
+                    dob, gender, hire_date, status, manager=False):
+        """Insert a new employee into the database."""
+        conn = self.get_connection()
+        if not conn:
+            return False
+        
+        cursor = conn.cursor()
+        
+        # Format dates properly
+        dob_date = dob if isinstance(dob, str) else dob.strftime('%Y-%m-%d')
+        hire_date_formatted = hire_date if isinstance(hire_date, str) else hire_date.strftime('%Y-%m-%d')
+        
+        query = """
+        INSERT INTO employee 
+        (DepID, job_title_id, name, email, contact_number, emergency_contact, 
+        date_of_birth, gender, hire_date, employment_status, manager, active) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1)
+        """
+        
+        try:
+            cursor.execute(query, (
+                dep_id, job_id, name, email, contact, emergency,
+                dob_date, gender, hire_date_formatted, status, manager
+            ))
+            conn.commit()
+            return True
+        except mysql.connector.Error as err:
+            print(f"Error inserting employee: {err}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def get_latest_emp_id(self):
+        """Get the ID of the most recently inserted employee."""
+        conn = self.get_connection()
+        if not conn:
+            return None
+        
+        cursor = conn.cursor()
+        
+        query = "SELECT LAST_INSERT_ID()"
+        
+        try:
+            cursor.execute(query)
+            result = cursor.fetchone()
+            return result[0] if result else None
+        except mysql.connector.Error as err:
+            print(f"Error getting latest EmpID: {err}")
+            return None
+        finally:
+            cursor.close()
+            conn.close()            
