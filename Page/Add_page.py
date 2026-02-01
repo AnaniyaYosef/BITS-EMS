@@ -1,238 +1,156 @@
 import customtkinter as ctk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from tkcalendar import DateEntry
-from PIL import Image, ImageTk
+from PIL import Image
 import datetime
+import sys
 import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils import EmployeeFile
-from DB_Service import Add_DB
+from DB_Service.Dep_job_db import DBService
 
 ctk.set_appearance_mode("Light")
-app = ctk.CTk()
-app.title("Add New Employee")
-app.geometry("1000x600")
 
-#-----Functions-----
-def upload_file(label):
-    file_path = filedialog.askopenfilename()
-    if file_path:
-        label.configure(text=file_path.split("/")[-1])
+class AddEmployeeApp(ctk.CTkToplevel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        self.title("Add New Employee")
+        self.geometry("1100x850")
+        self.attributes('-topmost', True)
+        
+        self.db_service = DBService()
+        
+        # Load DB Data for dropdowns
+        self.dept_data = self.db_service.get_all_departments()
+        self.job_data = self.db_service.get_all_job_titles()
 
-def ClearFiled():
-    full_name_entry.delete(0, "end")
-    contact_entry.delete(0, "end")
-    email_entry.delete(0, "end")
-    emergency_contact_entry.delete(0, "end")
+        self.main_frame = ctk.CTkScrollableFrame(self)
+        self.main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self.setup_ui()
+
+    def setup_ui(self):
+        ctk.CTkLabel(self.main_frame, text="New Employee Registration", font=("Arial", 26, "bold")).pack(pady=20)
+        top_container = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        top_container.pack(fill="both", expand=True, padx=10)
+
+        # --- LEFT COLUMN ---
+        left_col = ctk.CTkFrame(top_container)
+        left_col.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+
+        self.add_field(left_col, "Full Name", "full_name_entry")
+        self.add_field(left_col, "Email Address", "email_entry")
+        self.add_field(left_col, "Personal Contact", "contact_entry")
+
+        ctk.CTkLabel(left_col, text="Department", font=("Arial", 12, "bold")).pack(anchor="w", padx=20, pady=(10,0))
+        dept_names = [d[1] for d in self.dept_data] if self.dept_data else ["None"]
+        self.dept_option = ctk.CTkOptionMenu(left_col, values=dept_names)
+        self.dept_option.pack(fill="x", padx=20, pady=5)
+
+        # --- RIGHT COLUMN ---
+        right_col = ctk.CTkFrame(top_container)
+        right_col.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+
+        # NEW: Job Title Dropdown
+        ctk.CTkLabel(right_col, text="Job Title", font=("Arial", 12, "bold")).pack(anchor="w", padx=20, pady=(10,0))
+        job_names = [j[1] for j in self.job_data] if self.job_data else ["None"]
+        self.job_option = ctk.CTkOptionMenu(right_col, values=job_names)
+        self.job_option.pack(fill="x", padx=20, pady=5)
+
+        self.add_dropdown(right_col, "Gender", ["Male", "Female"], "gender_option")
+        self.add_dropdown(right_col, "Employment Status", ["Full-Time", "Part-Time"], "status_option")
+        self.add_field(right_col, "Emergency Contact", "emergency_entry")
+
+        # Dates
+        df = ctk.CTkFrame(right_col, fg_color="transparent")
+        df.pack(fill="x", padx=20, pady=10)
+        self.dob_entry = self.add_date(df, "DOB", 0)
+        self.hire_entry = self.add_date(df, "Hiring Date", 1)
+
+        # --- BOTTOM (DOCS) ---
+        self.setup_docs()
+
+        ctk.CTkButton(self.main_frame, text="SAVE EMPLOYEE", font=("Arial", 18, "bold"), 
+                      height=50, fg_color="#2ECC71", command=self.submit_action).pack(pady=40)
+
+    # UI Helpers
+    def add_field(self, p, txt, attr):
+        ctk.CTkLabel(p, text=txt, font=("Arial", 12, "bold")).pack(anchor="w", padx=20, pady=(10,0))
+        ent = ctk.CTkEntry(p)
+        ent.pack(fill="x", padx=20, pady=5)
+        setattr(self, attr, ent)
+
+    def add_dropdown(self, p, txt, vals, attr):
+        ctk.CTkLabel(p, text=txt, font=("Arial", 12, "bold")).pack(anchor="w", padx=20, pady=(10,0))
+        opt = ctk.CTkOptionMenu(p, values=vals)
+        opt.pack(fill="x", padx=20, pady=5)
+        setattr(self, attr, opt)
+
+    def add_date(self, p, txt, col):
+        ctk.CTkLabel(p, text=txt).grid(row=0, column=col, sticky="w")
+        de = DateEntry(p, width=12, date_pattern="yyyy-mm-dd")
+        de.grid(row=1, column=col, padx=5)
+        return de
+
+    def setup_docs(self):
+        f = ctk.CTkFrame(self.main_frame)
+        f.pack(fill="x", padx=20, pady=10)
+        self.cert_lbl = self.add_doc_row(f, "Certificate")
+        self.cv_lbl = self.add_doc_row(f, "CV")
+        self.img_lbl = ctk.CTkLabel(f, text="No Image", width=100, height=100, fg_color="gray")
+        self.img_lbl.pack(side="right", padx=20)
+        ctk.CTkButton(f, text="Photo", command=self.upload_img).pack(side="right")
+
+    def add_doc_row(self, p, txt):
+        lbl = ctk.CTkLabel(p, text="No file")
+        ctk.CTkButton(p, text=f"Upload {txt}", command=lambda: self.up_file(lbl)).pack(anchor="w")
+        lbl.pack(anchor="w", padx=10)
+        return lbl
+
+    def up_file(self, lbl):
+        path = filedialog.askopenfilename()
+        if path:
+            lbl.configure(text=os.path.basename(path))
+            lbl.full_path = path
+
+    def upload_img(self):
+        path = filedialog.askopenfilename()
+        if path:
+            img = Image.open(path)
+            ctk_img = ctk.CTkImage(img, size=(100, 100))
+            self.img_lbl.configure(image=ctk_img, text="")
+            self.img_lbl.full_path = path
+
+    def submit_action(self):
+        try:
+            # Map Names to IDs
+            d_id = next(i[0] for i in self.dept_data if i[1] == self.dept_option.get())
+            j_id = next(i[0] for i in self.job_data if i[1] == self.job_option.get())
+
+            success = self.db_service.insert_employee(
+                dep_id=d_id, job_id=j_id,
+                name=self.full_name_entry.get(),
+                email=self.email_entry.get(),
+                contact=self.contact_entry.get(),
+                emergency=self.emergency_entry.get(),
+                dob=self.dob_entry.get_date().strftime('%Y-%m-%d'),
+                gender=self.gender_option.get(),
+                hire_date=self.hire_entry.get_date().strftime('%Y-%m-%d'),
+                status=self.status_option.get(),
+                manager = False
+            )
+
+            if success:
+                emp_id = self.db_service.get_latest_emp_id()
+                files = {"image": getattr(self.img_lbl, 'full_path', None)} # Add others similarly
+                EmployeeFile.SaveEmpFile(emp_id, files)
+                messagebox.showinfo("Success", f"Saved! ID: {emp_id}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
 
-    dob_entry.set_date(datetime.date.today())
-    hire_date_entry.set_date(datetime.date.today())
 
-
-    department_option.set("IT")
-    gender_option.set("Male")
-
-
-def submit():
-    EmpId = ""
-    full_name = full_name_entry.get()
-    dob = dob_entry.get()
-    contact = contact_entry.get()
-    email = email_entry.get()
-    department = department_option.get()
-
-
-    gender = gender_option.get()
-    emergency_contact = emergency_contact_entry.get()
-    hire_date = hire_date_entry.get()
-    
-    file = {
-        "image": getattr(image_label, "file_path", None),
-        "cv": getattr(cv_label, "file_path", None),
-        "certificate": getattr(cert_label, "file_path", None),
-        "id": getattr(id_label, "file_path", None),
-        "contract": getattr(contract_label, "file_path", None),
-    }
-    #save_file = EmployeeFile.SaveEmpFile(EmployeeId=EmpId,files=file)
-
-
-
-    ClearFiled()
-
-#-----Frames-------
-main_frame = ctk.CTkFrame(app)
-main_frame.pack(fill="both", expand=True, padx=10, pady=10)
-
-ctk.CTkLabel(main_frame, text="New Employee From").pack(anchor="n", padx=20)
-
-top_frame = ctk.CTkFrame(main_frame)
-top_frame.pack(fill="both", expand=True)
-
-left_frame = ctk.CTkScrollableFrame(top_frame)
-left_frame.pack(side="left", fill="both", expand=True, padx=5, pady=5)
-
-right_frame = ctk.CTkScrollableFrame(top_frame)
-right_frame.pack(side="left", fill="both", expand=True, padx=5, pady=5)
-
-bottom_frame = ctk.CTkFrame(main_frame, height=80)
-bottom_frame.pack(fill="x", pady=5)
-
-#----left Frame Content------
-
-# Full Name
-ctk.CTkLabel(left_frame, text="Full Name").pack(anchor="w", padx=20)
-full_name_entry = ctk.CTkEntry(left_frame)
-full_name_entry.pack(fill="x", padx=20, pady=5)
-
-# Date of Birth
-ctk.CTkLabel(left_frame, text="Date of Birth",font=("Arial", 14, "bold")).pack(pady=(15, 5))
-dob_entry = DateEntry(left_frame,width=22,font=("Arial", 12),background="darkblue",foreground="white",borderwidth=2,
-date_pattern="yyyy-mm-dd")
-dob_entry.pack(padx=20, pady=5)
-
-# Contact Number
-ctk.CTkLabel(left_frame, text="Contact Number").pack(anchor="w", padx=20)
-contact_entry = ctk.CTkEntry(left_frame)
-contact_entry.pack(fill="x", padx=20, pady=5)
-
-
-# Email
-ctk.CTkLabel(left_frame, text="Email").pack(anchor="w", padx=20)
-email_entry = ctk.CTkEntry(left_frame)
-email_entry.pack(fill="x", padx=20, pady=5)
-
-
-# Department Dropdown
-ctk.CTkLabel(left_frame, text="Department").pack(anchor="w", padx=20)
-department_option = ctk.CTkOptionMenu(
-left_frame,
-values=["IT", "HR", "Finance", "Marketing", "Operations"])
-department_option.pack(fill="x", padx=20, pady=5)
-
-#----Right Frame Content------
-
-# Gender
-ctk.CTkLabel(right_frame, text="Gender").pack(anchor="w", padx=20)
-gender_option = ctk.CTkOptionMenu(right_frame,values=["Male", "Female"])
-gender_option.pack(fill="x", padx=20, pady=5)
-
-
-# Emergency Contact Phone
-ctk.CTkLabel(right_frame, text="Emergency Contact Number").pack(anchor="w", padx=20)
-emergency_contact_entry = ctk.CTkEntry(right_frame)
-emergency_contact_entry.pack(fill="x", padx=20, pady=5)
-
-
-# Hiring Date
-ctk.CTkLabel(right_frame,text="Hiring Date",font=("Arial", 14, "bold")).pack(pady=(15, 5))
-
-hire_date_entry = DateEntry(right_frame,width=22,font=("Arial", 12),background="darkblue",foreground="white",borderwidth=2,
-date_pattern="yyyy-mm-dd"
-)
-hire_date_entry.pack(pady=5)
-hire_date_entry.set_date(datetime.date.today())
-
-#----Bottom Frame Content------
-bottom_left_frame = ctk.CTkScrollableFrame(bottom_frame)
-bottom_left_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
-
-bottom_right_frame = ctk.CTkScrollableFrame(bottom_frame)
-bottom_right_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
-
-#---Left Bottom Side----
-ctk.CTkLabel(
-    bottom_left_frame,
-    text="Employee Documents",
-    font=("Arial", 15, "bold")
-).pack(anchor="w", pady=(5, 10))
-
-def upload_file(label):
-    file_path = filedialog.askopenfilename()
-    if file_path:
-        label.configure(text=file_path.split("/")[-1])
-
-# Certificate
-cert_label = ctk.CTkLabel(bottom_left_frame, text="No file selected")
-ctk.CTkButton(
-    bottom_left_frame,
-    text="Upload Certificate",
-    command=lambda: upload_file(cert_label)
-).pack(anchor="w", pady=(5, 2))
-cert_label.pack(anchor="w", padx=20)
-
-# ID Document
-id_label = ctk.CTkLabel(bottom_left_frame, text="No file selected")
-ctk.CTkButton(
-    bottom_left_frame,
-    text="Upload ID Document",
-    command=lambda: upload_file(id_label)
-).pack(anchor="w", pady=(8, 2))
-id_label.pack(anchor="w", padx=20)
-
-# CV / Resume
-cv_label = ctk.CTkLabel(bottom_left_frame, text="No file selected")
-ctk.CTkButton(
-    bottom_left_frame,
-    text="Upload CV / Resume",
-    command=lambda: upload_file(cv_label)
-).pack(anchor="w", pady=(8, 2))
-cv_label.pack(anchor="w", padx=20)
-
-# Contract
-contract_label = ctk.CTkLabel(bottom_left_frame, text="No file selected")
-ctk.CTkButton(
-    bottom_left_frame,
-    text="Upload Contract",
-    command=lambda: upload_file(contract_label)
-).pack(anchor="w", pady=(8, 2))
-contract_label.pack(anchor="w", padx=20)
-
-# --- Right Bottom Side ----
-ctk.CTkLabel(
-    bottom_right_frame,
-    text="Employee Photo",
-    font=("Arial", 15, "bold")
-).pack(pady=(5, 10))
-
-IMAGE_BOX_SIZE = 160 
-
-def upload_image():
-    file_path = filedialog.askopenfilename(
-        filetypes=[("Image Files", "*.png *.jpg *.jpeg")]
-    )
-    if not file_path:
-        return
-
-    img = Image.open(file_path)
-
-    img.thumbnail((IMAGE_BOX_SIZE, IMAGE_BOX_SIZE))
-
-    photo = ImageTk.PhotoImage(img)
-    image_label.configure(image=photo, text="")
-    image_label.image = photo 
-    image_label.file_path = file_path 
-
-ctk.CTkButton(
-    bottom_right_frame,
-    text="Upload Image",
-    command=upload_image,
-    width=150
-).pack(pady=5)
-
-image_label = ctk.CTkLabel(
-    bottom_right_frame,
-    text="No Image",
-    width=IMAGE_BOX_SIZE,
-    height=IMAGE_BOX_SIZE
-)
-image_label.pack(pady=10)
-
-ctk.CTkButton(
-    main_frame,
-    text="Submit Employee",
-    font=("Arial", 14, "bold"),
-    height=40,
-    command=submit
-).pack(pady=15)
-
-app.mainloop()
+if __name__ == "__main__":
+    app = AddEmployeeApp()
+    app.mainloop()

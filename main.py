@@ -1,50 +1,43 @@
 import customtkinter as ctk
-
-ctk.set_appearance_mode("Light")
-ctk.set_default_color_theme("green")
-
-app = ctk.CTk()
-app.title("BITS EMPLOYEE MANAGEMENT SYSTEM")
-app.geometry("1000x600")
+from Page.Login_page import LoginPage
+from Page.main_page import EmployeeDashboard
 
 
-#-----MainFrame
-main_frame = ctk.CTkFrame(app)
-main_frame.pack(fill="both", expand=True)
+class App(ctk.CTk):
+    def __init__(self):
+        super().__init__()
 
-#---Button/Left Frame
-left_frame = ctk.CTkFrame(
-    main_frame,
-    width=220,
-    corner_radius=0
-)
-left_frame.pack(side="left", fill="y")
-left_frame.pack_propagate(False)  # keep fixed width
+        self.title("BITS-EMS - Login")
+        self.geometry("1200x800")
+        self.minsize(1000, 650)
 
-#---Page/Right Frame
-right_frame = ctk.CTkFrame(main_frame)
-right_frame.pack(side="left", fill="both", expand=True)
+        ctk.set_appearance_mode("system")
+        ctk.set_default_color_theme("blue")
 
-# --- Button Container
-button_container = ctk.CTkFrame(left_frame, fg_color="transparent")
-button_container.place(relx=0.5, rely=0.5, anchor="center")
+        # Login page only
+        self.login_page = LoginPage(
+            master=self,
+            on_login_success=self.on_login_success
+        )
+        self.login_page.pack(expand=True, fill="both")
 
-# ---- BUTTON STYLE 
-def sidebar_button(text):
-    return ctk.CTkButton(
-        button_container,
-        text=text,
-        width=180,
-        height=40,
-        font=("Arial", 13)
-    )
-# -------- BUTTONS 
-sidebar_button("Home").pack(pady=6)
-sidebar_button("New Employee").pack(pady=6)
-sidebar_button("Search").pack(pady=6)
-sidebar_button("Edit Employee").pack(pady=6)
-sidebar_button("Remove Employee").pack(pady=6)
-sidebar_button("Contract").pack(pady=6)
-sidebar_button("Department / Job").pack(pady=6)
+    def on_login_success(self):
+        """
+        Called when login is confirmed.
+        No user data, no transfer.
+        """
+        # Close login window safely
+        self.after(0, self._open_main_page)
 
-app.mainloop()
+    def _open_main_page(self):
+        # Destroy login window completely
+        self.destroy()
+
+        # Open main page as its own window
+        main_page = EmployeeDashboard()
+        main_page.mainloop()
+
+
+if __name__ == "__main__":
+    app = App()
+    app.mainloop()

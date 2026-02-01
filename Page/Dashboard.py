@@ -69,7 +69,7 @@ class Dashboard:
         title_label.pack(anchor="w")
 
     def setup_dept_distribution(self, parent, col):
-        frame = ctk.CTkFrame(parent, fg_color=self.app.card_bg_color, corner_radius=10, border_width=1,
+        frame = ctk.CTkScrollableFrame(parent, fg_color=self.app.card_bg_color, corner_radius=10, border_width=1,
                              border_color=self.app.border_color)
         frame.grid(row=0, column=col, padx=(0, 15), sticky="nsew")
 

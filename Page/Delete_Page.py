@@ -17,7 +17,7 @@ class DeleteEmployeePage(CTkScrollableFrame):
     """Page that allows searching for and deleting an employee by ID."""
 
     def __init__(self, master):
-        super().__init__(master, width=600, height=400)
+        super().__init__(master, width=300, height=200)
 
         self.grid_columnconfigure(0, weight=1)
         self.configure(fg_color="white")
